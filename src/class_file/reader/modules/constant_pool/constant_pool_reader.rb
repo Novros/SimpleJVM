@@ -23,8 +23,10 @@ module ConstantPoolReader
   def read_constant_pool
     @class_file.constant_pool_count = load_bytes(2).to_i(16)
 
-    (@class_file.constant_pool_count-1).times do |index|
+    index = 1
+    while index < @class_file.constant_pool_count do
       constant_tag = read_constant_tag
+      shift = 1
       case constant_tag
         when TagReader::CONSTANT_METHODREF
           constant = read_method_ref
@@ -48,17 +50,22 @@ module ConstantPoolReader
           constant = read_string
         when TagReader::CONSTANT_DOUBLE
           constant = read_double
+          shift = 2
         when TagReader::CONSTANT_FLOAT
           constant = read_float
         when TagReader::CONSTANT_LONG
           constant = read_long
+          shift = 2
         when TagReader::CONSTANT_UTF8
           constant = read_utf8
         else
           fail ConstantPoolReaderError, 'Undefined constant pool tag; found: ' + constant_tag.to_s
       end
-      constant['#'] = index+1
-      @class_file.constant_pool << constant
+      constant['#'] = index
+      # long and double constants shifts by 2 others by 1
+      index += shift
+      # add constant to array shift times for better accessing by index
+      shift.times { @class_file.constant_pool << constant }
     end
 
   end

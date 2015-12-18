@@ -1,3 +1,5 @@
+##
+# Read magic number from begining of every Java class file
 module MagicReader
   def read_magic
     @read_position != 0 &&

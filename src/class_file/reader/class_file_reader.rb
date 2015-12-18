@@ -7,10 +7,15 @@ require_relative 'modules/this_super_reader'
 require_relative 'modules/interfaces_reader'
 require_relative 'modules/fields_reader'
 require_relative 'modules/method_reader'
+require_relative 'modules/attributes/attributes_reader'
 
 class ClassFileReaderError < StandardError
 end
 
+##
+# Load and parse content of Java binary class file
+# For more information about Java class file format see
+# https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html
 class ClassFileReader
   attr_accessor :class_file, :input
   include MagicReader
@@ -21,6 +26,7 @@ class ClassFileReader
   include InterfacesReader
   include FieldsReader
   include MethodReader
+  include AttributesReader
 
   def initialize(file_path)
     @input = []
@@ -29,6 +35,7 @@ class ClassFileReader
     @class_file = ClassFile.new
   end
 
+  # Start parsing content
   def parse_content
     read_magic
     read_versions
@@ -39,7 +46,7 @@ class ClassFileReader
     read_interfaces
     read_fields
     read_methods
-    puts load_bytes(4)
+    read_attributes
   end
 
   # Load count bytes from input array and move read position
