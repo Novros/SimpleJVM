@@ -1,4 +1,4 @@
-require_relative '../class_file/class_file'
+require_relative '../class_file/java_class'
 require_relative '../class_file/reader/class_file_reader'
 
 module Heap
@@ -25,13 +25,18 @@ module Heap
 
     def load_class(class_name)
       path = class_name + '.class'
-      # TODO: Get absolute or relative path.
+      path = get_path(path)
       reader = ClassFileReader.new(path)
       reader.parse_content
       java_class = reader.class_file
       java_class.class_heap = self
       add_class(java_class)
       java_class
+    end
+
+    # TODO Remove, only for testing
+    def get_path(class_name)
+      "./test/resource/class/#{class_name}"
     end
   end
 end

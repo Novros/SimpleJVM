@@ -1,4 +1,4 @@
-require_relative '../class_file'
+require_relative '../java_class'
 require_relative 'modules/magic_reader'
 require_relative 'modules/version_reader'
 require_relative 'modules/constant_pool/constant_pool_reader'
@@ -57,6 +57,7 @@ class ClassFileReader
 
   # Get all bytes from file and store in array
   def read_file_content(file_path)
+    raise ClassFileReaderError, 'File not exists or it is not file. - '  << file_path unless File.file?(file_path)
     File.open(file_path, 'r').each_byte do |byte|
         @input << byte.to_s(16).rjust(2,'0')
       end

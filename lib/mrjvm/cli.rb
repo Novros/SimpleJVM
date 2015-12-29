@@ -57,7 +57,5 @@ module MRjvm
   end
 
   file = ARGV[0]
-  reader = ClassFileReader.new(file)
-  reader.parse_content
-  puts reader.class_file
+  MRjvm.print_file(file)
 end

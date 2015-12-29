@@ -14,6 +14,8 @@ module ClassFile
       @attributes = []
     end
 
+    # !!!! TODO Maybe create some internal representation???
+
     def get_string_from_constant_pool(index)
       @constant_pool[index-1][:bytes]
     end
@@ -24,6 +26,13 @@ module ClassFile
 
     def super_class_str
       get_string_from_constant_pool(@constant_pool[super_class-1][:name_index])
+    end
+
+    def get_method_index(method_name)
+      methods.each_with_index do |method, index|
+        return index if get_string_from_constant_pool(method[:name_index]) == method_name
+      end
+      -1
     end
 
     def to_s
