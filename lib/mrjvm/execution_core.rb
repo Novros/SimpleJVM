@@ -38,7 +38,7 @@ class ExecutionCore
         # when BYTE_ICONST_4
         when BYTE_ICONST_5
           frame.sp += 1
-          frame.stack[frame.sp].value = byte_code[frame.pc] - BYTE_ICONST_5
+          frame.stack[frame.sp] = byte_code[frame.pc] - BYTE_ICONST_5
           frame.pc += 1
 
         #-------------------------------------------------------------------------
@@ -95,78 +95,78 @@ class ExecutionCore
 
         # -------------------------- Couting operations ----------------------------
         when BYTE_IADD
-          frame.stack[frame.sp-1].value = frame.stack[frame.sp-1].value + frame.stack[frame.sp].value
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] + frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
         # when BYTE_LADD
         when BYTE_ISUB
-          frame.stack[frame.sp-1].value = frame.stack[frame.sp-1].value - frame.stack[frame.sp].value
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] - frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
         when BYTE_IMUL
-          frame.stack[frame.sp-1].value = frame.stack[frame.sp-1].value * frame.stack[frame.sp].value
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] * frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
         when BYTE_IINC
-          frame.stack[frame.pc+1].value += byte_code[frame.pc+2]
+          frame.stack[frame.pc+1] += byte_code[frame.pc+2]
           frame.pc += 3
 
         # -------------------------- Control flow ----------------------------
         when BYTE_IFEQ
-          (frame.stack[frame.sp].value == 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] == 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
           frame.sp -= 1
         when BYTE_IFNE
-          (frame.stack[frame.sp].value == 0) ? frame.pc += 3 : frame.pc += byte_code[frame.pc+1].to_i(16)
+          (frame.stack[frame.sp] == 0) ? frame.pc += 3 : frame.pc += byte_code[frame.pc+1].to_i(16)
           frame.sp -= 1
         when BYTE_IFLT
-          (frame.stack[frame.sp].value < 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] < 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
           frame.sp -= 1
         when BYTE_IFGE
-          (frame.stack[frame.sp].value >= 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] >= 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
           frame.sp -= 1
         when BYTE_IFGT
-          (frame.stack[frame.sp].value > 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] > 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
           frame.sp -= 1
         when BYTE_IFLE
-          (frame.stack[frame.sp].value <= 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] <= 0) ? frame.pc += byte_code[frame.pc+1].to_i(16) : frame.pc += 3
           frame.sp -= 1
         when BYTE_IF_ICMPEQ
-          if frame.stack[frame.sp - 1].value == frame.stack[frame.sp].value
+          if frame.stack[frame.sp - 1] == frame.stack[frame.sp]
             frame.pc += byte_code[frame.pc+1].to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when BYTE_IF_ICMPNE
-          if frame.stack[frame.sp - 1].value != frame.stack[frame.sp].value
+          if frame.stack[frame.sp - 1] != frame.stack[frame.sp]
             frame.pc += byte_code[frame.pc+1].to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when BYTE_IF_ICMPLT
-          if frame.stack[frame.sp - 1].value < frame.stack[frame.sp].value
+          if frame.stack[frame.sp - 1] < frame.stack[frame.sp]
             frame.pc += byte_code[frame.pc+1].to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when BYTE_IF_ICMPGE
-          if frame.stack[frame.sp - 1].value >= frame.stack[frame.sp].value
+          if frame.stack[frame.sp - 1] >= frame.stack[frame.sp]
             frame.pc += byte_code[frame.pc+1].to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when BYTE_IF_ICMPGT
-          if frame.stack[frame.sp - 1].value > frame.stack[frame.sp].value
+          if frame.stack[frame.sp - 1] > frame.stack[frame.sp]
             frame.pc += byte_code[frame.pc+1].to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when BYTE_IF_ICMPLE
-          if frame.stack[frame.sp - 1].value <= frame.stack[frame.sp].value
+          if frame.stack[frame.sp - 1] <= frame.stack[frame.sp]
             frame.pc += byte_code[frame.pc+1].to_i(16)
           else
             frame.pc += 3
@@ -179,7 +179,7 @@ class ExecutionCore
 
         # -------------------------- Return from methods -------------------------
         when BYTE_IRETURN
-          frame.stack[0].value = frame.stack[frame.sp].value
+          frame.stack[0] = frame.stack[frame.sp]
         when BYTE__RETURN
           return 0
 
@@ -188,7 +188,7 @@ class ExecutionCore
           get_field(frame)
           frame.pc += 3
         when BYTE_PUTFIELD
-          put_field(frame)
+          put_field(frame_stack)
           frame.pc += 3
 
         # -------------------------- Invoking methods ----------------------------
@@ -210,7 +210,7 @@ class ExecutionCore
           execute_new_array(frame)
           frame.pc += 2
         when BYTE_ANEWARRAY
-          excute_a_new_array(frame)
+          execute_a_new_array(frame)
           frame.pc +=3
 
         # ------------------------------- Goto ------------------------------------
@@ -233,24 +233,34 @@ class ExecutionCore
     0
   end
 
-  def put_field(frame)
-    # code here
+  def put_field(frame_stack)
+    index = frame_stack[0].method[:code][frame_stack[0].pc+1].to_i(16)
+    object = frame_stack[0].stack[frame_stack[0].sp - 1]
+    value = frame_stack[0].stack[frame_stack[0].sp]
+    var_list = object_heap.get_object(object).variables
+    var_list[index+1] = value
   end
 
   def get_field(frame)
-    # code here
+    index = frame.method[:code][frame.pc+1].to_i(16)
+    object = frame.stack[frame.sp]
+    var_list = object_heap.get_object(object).variables
+    frame.stack[frame.sp] = var_list[index+1]
   end
 
   def execute_new_array(frame)
     # code here
   end
 
-  def excute_a_new_array(frame)
+  def execute_a_new_array(frame)
     # code here
   end
 
   def execute_new(frame)
-    # code here
+    frame.sp += 1
+    byte_code = frame.method[:code]
+    index = byte_code[frame.pc+1].to_i(16)
+    frame.stack[frame.sp] = frame.frame_class.create_object(index, @object_heap)
   end
 
   def execute_invoke_static(frame)

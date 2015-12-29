@@ -6,7 +6,6 @@ require 'mrjvm/heap/frame'
 require 'mrjvm/execution_core'
 
 module MRjvm
-
   DEBUG_STRING = '[DEBUG] '
 
   def self::debug(string)

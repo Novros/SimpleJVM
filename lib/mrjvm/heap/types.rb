@@ -7,7 +7,4 @@ module Heap
   POINTER_VALUE = 5
   OBJECT_VALUE = 6
 
-  class Object
-    attr_accessor :heap_id, :type
-  end
 end
