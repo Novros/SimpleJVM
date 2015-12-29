@@ -10,7 +10,6 @@ module MRjvm
   end
 
   class MRjvm
-
     def initialize
     end
 
@@ -19,6 +18,5 @@ module MRjvm
       reader.parse_content
       puts reader.class_file
     end
-
   end
 end

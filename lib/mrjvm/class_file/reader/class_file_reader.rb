@@ -51,20 +51,14 @@ class ClassFileReader
 
   # Load count bytes from input array and move read position
   def load_bytes(count)
-    result = ''
-    count.times do
-     result += @input[@read_position]
-      @read_position += 1
-    end
-    result
+    @read_position += count
+    @input[@read_position-count, count].join('')
   end
 
   # Get all bytes from file and store in array
   def read_file_content(file_path)
-    File.open(file_path, 'r') do |io|
-      io.read.each_byte.map do |byte|
+    File.open(file_path, 'r').each_byte do |byte|
         @input << byte.to_s(16).rjust(2,'0')
       end
-    end
   end
 end
