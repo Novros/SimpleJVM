@@ -35,13 +35,14 @@ module MRjvm
       executing_core = ExecutionCore.new
       executing_core.class_heap = class_heap
       executing_core.object_heap = object_heap
+      executing_core.fp = 0
 
       object_id = object_heap.create_object(java_class)
       method_index = java_class.get_method_index('hello') # Here must be name of method, which will be started.
       frame_stack[start_frame].frame_class = java_class
       frame_stack[start_frame].method = java_class.methods[method_index]
       frame_stack[start_frame].stack = Heap::Frame.op_stack
-      frame_stack[start_frame].sp = 0#frame_stack[start_frame].method[:attributes]#[:max_locals] # TODO Edit? Where to find?
+      frame_stack[start_frame].sp = frame_stack[start_frame].method[:attributes][0][:max_locals] # Why?
       frame_stack[start_frame].stack[0] = object_id
       executing_core.execute(frame_stack)
     end
