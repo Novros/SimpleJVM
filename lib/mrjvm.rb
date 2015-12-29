@@ -17,7 +17,7 @@ module Nrjvm
     end
 
     def run(file)
-      java_class = ClassFile::JavaClass.new
+      java_class = JavaClass::JavaClass.new
       java_class.load_class_file_from_file(file)
     end
 
