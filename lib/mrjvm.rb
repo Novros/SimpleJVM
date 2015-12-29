@@ -6,13 +6,10 @@ module Nrjvm
   DEBUG_STRING = '[DEBUG] '
 
   def self::debug(string)
-    if DEBUG
-      puts DEBUG_STRING + string + "\n"
-    end
+    puts DEBUG_STRING + string + "\n" if DEBUG
   end
 
   class Nrjvm
-
     def initialize
     end
 
@@ -20,6 +17,5 @@ module Nrjvm
       java_class = ClassFile::JavaClass.new
       java_class.load_class_file_from_file(file)
     end
-
   end
 end
