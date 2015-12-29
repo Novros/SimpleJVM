@@ -1,4 +1,4 @@
-require_relative '../model/class_file'
+require_relative '../class_file'
 require_relative 'modules/magic_reader'
 require_relative 'modules/version_reader'
 require_relative 'modules/constant_pool/constant_pool_reader'
@@ -32,7 +32,7 @@ class ClassFileReader
     @input = []
     @read_position = 0
     read_file_content(file_path)
-    @class_file = ClassFile.new
+    @class_file = ClassFile::ClassFile.new
   end
 
   # Start parsing content
