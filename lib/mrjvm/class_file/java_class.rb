@@ -1,10 +1,10 @@
 module ClassFile
-  class ClassFile
+  class JavaClass
     attr_accessor :magic, :minor_version, :major_version,
                   :constant_pool_count, :constant_pool, :access_flags,
                   :this_class, :super_class, :interfaces_count, :interfaces,
                   :fields_count, :fields, :methods_count, :methods,
-                  :attributes_count, :attributes
+                  :attributes_count, :attributes, :class_heap
 
     def initialize
       @constant_pool = []
@@ -12,6 +12,18 @@ module ClassFile
       @fields = []
       @methods = []
       @attributes = []
+    end
+
+    def get_string_from_constant_pool(index)
+      @constant_pool[index-1][:bytes]
+    end
+
+    def this_class_str
+      get_string_from_constant_pool(@constant_pool[this_class-1][:name_index])
+    end
+
+    def super_class_str
+      get_string_from_constant_pool(@constant_pool[super_class-1][:name_index])
     end
 
     def to_s
@@ -37,7 +49,6 @@ module ClassFile
       @methods.each do |method|
         string << "  #{method}\n"
       end
-
       string
     end
   end
