@@ -57,5 +57,5 @@ module MRjvm
   end
 
   file = ARGV[0]
-  MRjvm.print_file(file)
+  MRjvm.run(file)
 end

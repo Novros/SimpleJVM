@@ -1,6 +1,7 @@
 require_relative 'class_file/reader/modules/access_flags_reader'
 require_relative 'heap/frame'
 require_relative 'op_codes'
+require_relative 'native/runtime_environment'
 
 class ExecutionCore
   attr_accessor :class_heap, :object_heap
@@ -8,18 +9,22 @@ class ExecutionCore
   def execute(frame_stack)
     frame = frame_stack[0]
 
-    if frame.method.access_flags & AccessFlagsReader::ACC_SYNTHETIC
-      execute_native_method(frame)
+    if (frame.method[:access_flags].to_i & AccessFlagsReader::ACC_SYNTHETIC) != 0
+      execute_native_method(frame_stack)
       return 0
     end
 
     # TODO This must return bytecode of method.
-    byte_code = frame.method[:attributes][:code]
+    byte_code = frame.method[:code]
     java_class = frame.frame_class
     method_string = java_class.get_string_from_constant_pool(frame.method[:name_index])
 
     # TODO Some debug things
     while true
+
+      puts class_heap.to_s
+      puts object_heap.to_s
+
       case byte_code[frame.pc]
         #-------------------------------------------------------------------------
         when BYTE_NOP
@@ -235,16 +240,22 @@ class ExecutionCore
 
   def put_field(frame_stack)
     index = frame_stack[0].method[:code][frame_stack[0].pc+1].to_i(16)
-    object = frame_stack[0].stack[frame_stack[0].sp - 1]
+    object_id = frame_stack[0].stack[frame_stack[0].sp - 1]
     value = frame_stack[0].stack[frame_stack[0].sp]
-    var_list = object_heap.get_object(object).variables
+    var_list = object_heap.get_object(object_id).variables
+
+    puts '[DEBUG] Put field into object: ' << object_id << ' on index: ' << index << ' with value: ' << value
+
     var_list[index+1] = value
   end
 
   def get_field(frame)
     index = frame.method[:code][frame.pc+1].to_i(16)
-    object = frame.stack[frame.sp]
-    var_list = object_heap.get_object(object).variables
+    object_id = frame.stack[frame.sp]
+    var_list = object_heap.get_object(object_id).variables
+
+    puts '[DEBUG] Reading field from object: ' << object_id << ' on index: ' << index
+
     frame.stack[frame.sp] = var_list[index+1]
   end
 
@@ -260,7 +271,17 @@ class ExecutionCore
     frame.sp += 1
     byte_code = frame.method[:code]
     index = byte_code[frame.pc+1].to_i(16)
+
+    puts '[DEBUG] Executed new on class index: ' << index << ' in class ' << frame.frame_class
+
     frame.stack[frame.sp] = frame.frame_class.create_object(index, @object_heap)
+  end
+
+  def execute_invoke(frame_stack)
+    # method_index = frame_stack[0].method[:code][frame_stack[0].pc+1]
+    # object_ref = frame_stack[0].stack[frame_stack[0].sp]
+    # method = frame_stack[0].frame_class.constant_pool[method_index]
+    # class_index =
   end
 
   def execute_invoke_static(frame)
@@ -275,7 +296,28 @@ class ExecutionCore
     # code here
   end
 
-  def execute_native_method(frame)
-    # code here
+  def execute_native_method(frame_stack)
+    frame = frame_stack[0]
+
+    java_class = frame.frame_class
+    class_name = java_class.this_class_str
+    method_name = java_class.get_string_from_constant_pool(frame.method[:name_index])
+    descriptor = java_class.get_string_from_constant_pool(frame.method[:descriptor_index])
+
+    signature = class_name << '@' << method_name << descriptor
+    native_method = get_native_method(signature)
+
+    runtime_environment = Native::RuntimeEnvironment.new
+    runtime_environment.frame_stack = frame_stack
+    runtime_environment.class_heap = class_heap
+    runtime_environment.object_heap = object_heap
+
+    return_value = runtime_environment.run(native_method)
+    frame.stack[0] = return_value if descriptor.include? '()V'
+  end
+
+  # TODO: Only for testing
+  def get_native_method(signature)
+    return 'native_print'
   end
 end
