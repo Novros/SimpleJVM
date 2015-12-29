@@ -32,7 +32,7 @@ class ClassFileReader
     @input = []
     @read_position = 0
     read_file_content(file_path)
-    @class_file = ClassFile::ClassFile.new
+    @class_file = ClassFile::JavaClass.new
   end
 
   # Start parsing content
