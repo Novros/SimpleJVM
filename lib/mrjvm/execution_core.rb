@@ -1,11 +1,13 @@
 require_relative 'class_file/reader/modules/access_flags_reader'
 require_relative 'heap/frame'
-require_relative 'opcodes'
+require_relative 'op_codes'
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # TODO This is only for showing the logic of execution, rewrite
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 class ExecutionCore
+  attr_accessor :class_heap, :object_heap
+
   def execute(frame_stack)
     frame = frame_stack[0]
 
