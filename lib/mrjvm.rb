@@ -1,24 +1,23 @@
 require 'nrjvm/version'
 require 'nrjvm/class_file/java_class'
 
-module Nrjvm
+module MRjvm
 
   DEBUG_STRING = '[DEBUG] '
 
   def self::debug(string)
-    if DEBUG
-      puts DEBUG_STRING + string + "\n"
-    end
+    puts DEBUG_STRING + string + "\n" if DEBUG
   end
 
-  class Nrjvm
+  class MRjvm
 
     def initialize
     end
 
     def run(file)
-      java_class = ClassFile::JavaClass.new
-      java_class.load_class_file_from_file(file)
+      reader = ClassFileReader.new(file)
+      reader.parse_content
+      puts reader.class_file
     end
 
   end
