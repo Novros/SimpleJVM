@@ -37,7 +37,6 @@ module AttributesReader
     attributes_count.times do
       attribute_name_index = load_bytes(2).to_i(16)
       attribute_name = @class_file.constant_pool[attribute_name_index-1][:bytes]
-      puts attribute_name
       case attribute_name
         when ATTRIBUTE_CODE
           attributes << read_code_attribute(attribute_name_index)
