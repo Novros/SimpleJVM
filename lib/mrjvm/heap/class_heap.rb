@@ -37,6 +37,9 @@ module Heap
       java_class = reader.class_file
       java_class.class_heap = self
       add_class(java_class)
+
+      puts '[DEBUG] ' << java_class.to_s
+
       java_class
     end
 
