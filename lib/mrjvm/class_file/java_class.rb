@@ -38,13 +38,15 @@ module ClassFile
     def create_object(index, object_heap)
       # TODO Checking if is constant CONSTANT_CLASS
       constant = constant_pool[index]
+      constant = constant_pool[constant[:class_index]-1]
       name = get_string_from_constant_pool(constant[:name_index])
       java_class = class_heap.get_class(name)
       object_heap.create_object(java_class)
     end
 
     def to_s
-      string = '[DEBUG] magic: ' << @magic << "\n"
+      string = '[CLASS]' << "\n"
+      string << '[DEBUG] magic: ' << @magic << "\n"
       string << '[DEBUG] minor version: ' << @minor_version.to_s << "\n"
       string << '[DEBUG] major version: ' << @major_version.to_s << "\n"
       string << '[DEBUG] access_flags: ' << @access_flags.to_s << "\n"
