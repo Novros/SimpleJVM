@@ -44,27 +44,27 @@ module ClassFile
     end
 
     def to_s
-      string = 'magic: ' << @magic << "\n"
-      string << 'minor version: ' << @minor_version.to_s << "\n"
-      string << 'major version: ' << @major_version.to_s << "\n"
-      string << 'access_flags: ' << @access_flags.to_s << "\n"
-      string << 'this class (constant pool indexes): ' << @this_class.to_s << "\n"
-      string << 'super class (constant pool indexes): ' << @super_class.to_s << "\n"
-      string << 'constant pool count: ' << @constant_pool_count.to_s << "\n"
-      string << 'constant pool: ' << "\n"
+      string = '[DEBUG] magic: ' << @magic << "\n"
+      string << '[DEBUG] minor version: ' << @minor_version.to_s << "\n"
+      string << '[DEBUG] major version: ' << @major_version.to_s << "\n"
+      string << '[DEBUG] access_flags: ' << @access_flags.to_s << "\n"
+      string << '[DEBUG] this class (constant pool indexes): ' << @this_class.to_s << "\n"
+      string << '[DEBUG] super class (constant pool indexes): ' << @super_class.to_s << "\n"
+      string << '[DEBUG] constant pool count: ' << @constant_pool_count.to_s << "\n"
+      string << '[DEBUG] constant pool: ' << "\n"
       @constant_pool.each do |constant|
-        string << '  ' << constant.to_s << "\n"
+        string << "[DEBUG][CONSTANT] \t#{constant}\n"
       end
 
-      string << 'interfaces (constant pool indexes): ' << interfaces.to_s << "\n"
-      string << 'fields: ' << "\n"
+      string << '[DEBUG][INTERFACES] interfaces (constant pool indexes): ' << interfaces.to_s << "\n"
+      string << '[DEBUG][FIELDS] fields: ' << "\n"
       @fields.each do |field|
-        string << '  ' << field.to_s << "\n"
+        string << "[DEBUG][FIELD] \t#{field}\n"
       end
 
-      string << "methods: \n"
+      string << "[DEBUG][METHODS] methods: \n"
       @methods.each do |method|
-        string << "  #{method}\n"
+        string << "[DEBUG][METHOD] \t#{method}\n"
       end
       string
     end

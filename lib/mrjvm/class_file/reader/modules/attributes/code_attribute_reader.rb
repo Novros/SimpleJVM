@@ -30,5 +30,6 @@ module CodeAttributeReader
     attribute[:attributes_count] = load_bytes(2).to_i(16)
     # read attributes
     attribute[:attributes] = read_attributes(attribute[:attributes_count])
+    attribute
   end
 end
