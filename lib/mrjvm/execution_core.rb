@@ -361,11 +361,11 @@ class ExecutionCore
     discard_stack = params
     if (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_SYNTHETIC) != 0
     else
-      discard_stack += frame_stack[fp+1].method[:attributes][0][:max_locals]
+      discard_stack += method[:attributes][0][:max_locals]
     end
 
     frame_stack[fp+1].stack = Heap::Frame.op_stack
-    frame_stack[fp+1].sp = frame_stack[fp].sp + discard_stack
+    frame_stack[fp+1].sp = frame_stack[fp].sp + discard_stack - 1
     frame_stack[fp+1].pc = 0
 
     puts '[DEBUG] Invoking method ' << method_name << ' ' << method_descriptor
@@ -373,23 +373,33 @@ class ExecutionCore
     @fp += 1
     execute(frame_stack)
     @fp -= 1
-    frame_stack[fp].sp -= discard_stack
 
-    # if method_descriptor.include? '()V'
-    #   discard_stack -= 1
-    # end
-    # frame_stack[fp].sp -= discard_stack
+    if method_descriptor.include? '()V'
+       discard_stack -= 1
+    end
+    frame_stack[fp].sp -= discard_stack
   end
 
   def get_method_parameters_stack_count(method_descriptor)
     count = 0
     puts '[DEBUG][TODO] ' << method_descriptor
-    # TODO Implement
+    for i in 1..method_descriptor.size
+      if method_descriptor[i] == 'L'
+        while method_descriptor[i] != ';'
+          i += 1
+        end
+      elsif method_descriptor[i] == ')'
+        break
+      elsif method_descriptor[i] == 'J' || method_descriptor[i] == 'D'
+        count +=1
+      end
+      count += 1
+    end
     count
   end
 
   def execute_native_method(frame_stack)
-    puts '[DEBUG] Invoking method.'
+    puts '[DEBUG] Invoking native method.'
 
     frame = frame_stack[0]
 
