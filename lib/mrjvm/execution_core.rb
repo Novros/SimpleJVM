@@ -44,28 +44,48 @@ class ExecutionCore
           frame.sp += 1
           frame.stack[frame.sp] = byte_code_int - OpCodes::BYTE_ICONST_0
           frame.pc += 1
-
+        # when OpCodes::BYTE_LCONST_0, OpCodes::BYTE_LCONST_1
+        #   frame.sp += 1
+        #   frame.stack[frame.sp] = 0
+        #   frame.sp += 1
+        #   frame.stack[frame.sp] = byte_code_int - OpCodes::BYTE_LCONST_0
+        #   frame.pc += 1
+        when OpCodes::BYTE_FCONST_0
+          frame.sp += 1
+          frame.stack[frame.sp] = 0.0
+          frame.pc += 1
+        when OpCodes::BYTE_FCONST_1
+          frame.sp += 1
+          frame.stack[frame.sp] = 1.0
+          frame.pc += 1
+        when OpCodes::BYTE_FCONST_2
+          frame.sp += 1
+          frame.stack[frame.sp] = 2.0
+          frame.pc += 1
+        # when OpCodes::BYTE_DCONST_0
+        #   frame.sp += 1
+        #   frame.stack[frame.sp] = 0.0
+        #   frame.pc += 1
+        # when OpCodes::BYTE_DCONST_1
+        #   frame.sp += 1
+        #   frame.stack[frame.sp] = 1.0
+        #   frame.pc += 1
         #-------------------------------------------------------------------------
         when OpCodes::BYTE_BIPUSH
           frame.sp += 1
-          frame.stack[frame.sp] = byte_code[frame.pc+1]
+          frame.stack[frame.sp] = byte_code[frame.pc+1].to_i(16)
           frame.pc += 2
         when OpCodes::BYTE_SIPUSH
           frame.sp += 1
           frame.stack[frame.sp] = (byte_code[frame.pc+1,2].join('').to_i(16))
           frame.sp += 3
-        when OpCodes::BYTE_LCONST_0, OpCodes::BYTE_LCONST_1
-          frame.sp += 1
-          frame.stack[frame.sp] = 0
-          frame.sp += 1
-          frame.stack[frame.sp] = byte_code[frame.pc] - OpCodes::BYTE_LCONST_0
-          frame.pc += 1
         when OpCodes::BYTE_LDC
           frame.sp += 1
           frame.stack[frame.sp] = load_constant(frame.frame_class, byte_code[frame.pc+1].to_i(16))
           frame.pc += 2
+        # when OpCodes::BYTE_LDC_W
         # when OpCodes::BYTE_LDC2_W
-        when OpCodes::BYTE_ILOAD, OpCodes::BYTE_ALOAD
+        when OpCodes::BYTE_ILOAD, OpCodes::BYTE_FLOAD, OpCodes::BYTE_DLOAD, OpCodes::BYTE_ALOAD
           frame.sp += 1
           frame.stack[frame.sp] = frame.stack[byte_code[frame.pc+1].to_i(16)]
           frame.pc += 2
@@ -74,15 +94,16 @@ class ExecutionCore
           frame.sp += 1
           frame.stack[frame.sp] = frame.stack[byte_code_int - OpCodes::BYTE_ILOAD_0]
           frame.pc += 1
-        when OpCodes::BYTE_LLOAD_0, OpCodes::BYTE_LLOAD_1, OpCodes::BYTE_LLOAD_2, OpCodes::BYTE_LLOAD_3
-          frame.sp += 1
-          frame.stack[frame.sp] = frame.stack[byte_code_int - OpCodes::BYTE_LLOAD_0]
-          frame.sp += 1
-          frame.stack[frame.sp] = frame.stack[byte_code_int - OpCodes::BYTE_LLOAD_0+1]
-          frame.pc += 1
+        # when OpCodes::BYTE_LLOAD_0, OpCodes::BYTE_LLOAD_1, OpCodes::BYTE_LLOAD_2, OpCodes::BYTE_LLOAD_3
+        #   frame.sp += 1
+        #   frame.stack[frame.sp] = frame.stack[byte_code_int - OpCodes::BYTE_LLOAD_0]
+        #   frame.sp += 1
+        #   frame.stack[frame.sp] = frame.stack[byte_code_int - OpCodes::BYTE_LLOAD_0+1]
+        #   frame.pc += 1
         when OpCodes::BYTE_FLOAD_0, OpCodes::BYTE_FLOAD_1, OpCodes::BYTE_FLOAD_2, OpCodes::BYTE_FLOAD_3
           frame.sp += 1
           frame.stack[frame.sp] = frame.stack[byte_code_int - OpCodes::BYTE_FLOAD_0]
+          frame.pc += 1
         when OpCodes::BYTE_ALOAD_0, OpCodes::BYTE_ALOAD_1, OpCodes::BYTE_ALOAD_2, OpCodes::BYTE_ALOAD_3
           frame.sp += 1
           frame.stack[frame.sp] = frame.stack[byte_code_int - OpCodes::BYTE_ALOAD_0]
@@ -90,19 +111,19 @@ class ExecutionCore
         # when OpCodes::BYTE_IALOAD
         # when OpCodes::BYTE_AALOAD
         when OpCodes::BYTE_ISTORE, OpCodes::BYTE_ASTORE
-          frame.sp -= 1
           frame.stack[byte_code[frame.pc+1].to_i(16)] = frame.stack[frame.sp]
+          frame.sp -= 1
           frame.pc += 2
         when OpCodes::BYTE_ISTORE_0, OpCodes::BYTE_ISTORE_1, OpCodes::BYTE_ISTORE_2, OpCodes::BYTE_ISTORE_3
           frame.stack[byte_code_int - OpCodes::BYTE_ISTORE_0] = frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
-        when OpCodes::BYTE_LSTORE_0, OpCodes::BYTE_LSTORE_1, OpCodes::BYTE_LSTORE_2, OpCodes::BYTE_LSTORE_3
-          frame.stack[byte_code_int - OpCodes::BYTE_LCONST_0 + 1] = frame.stack[frame.sp]
-          frame.sp -= 1
-          frame.stack[byte_code_int - OpCodes::BYTE_LCONST_0] = frame.stack[frame.sp]
-          frame.sp -= 1
-          frame.pc += 1
+        # when OpCodes::BYTE_LSTORE_0, OpCodes::BYTE_LSTORE_1, OpCodes::BYTE_LSTORE_2, OpCodes::BYTE_LSTORE_3
+        #   frame.stack[byte_code_int - OpCodes::BYTE_LCONST_0 + 1] = frame.stack[frame.sp]
+        #   frame.sp -= 1
+        #   frame.stack[byte_code_int - OpCodes::BYTE_LCONST_0] = frame.stack[frame.sp]
+        #   frame.sp -= 1
+        #   frame.pc += 1
         when OpCodes::BYTE_FSTORE_0, OpCodes::BYTE_FSTORE_1, OpCodes::BYTE_FSTORE_2, OpCodes::BYTE_FSTORE_3
           frame.stack[byte_code_int - OpCodes::BYTE_FSTORE_0] = frame.stack[frame.sp]
           frame.sp -= 1
@@ -112,7 +133,7 @@ class ExecutionCore
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_IASTORE, OpCodes::BYTE_AASTORE
-          raise StandardError, 'TODO'
+          raise StandardError, 'TODO, add array support'
           object_heap.get_object(frame.stack[frame.sp-2]) # TODO Implement
           frame.sp -= 3
           frame.pc += 1
@@ -143,7 +164,12 @@ class ExecutionCore
           frame.stack[frame.sp-1] = frame.stack[frame.sp-1] * frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
+        when OpCodes::BYTE_IDIV
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] / frame.stack[frame.sp]
+          frame.sp -= 1
+          frame.pc += 1
         when OpCodes::BYTE_IINC
+          # TODO Check
           frame.stack[frame.pc+1] += byte_code[frame.pc+2]
           frame.pc += 3
 
