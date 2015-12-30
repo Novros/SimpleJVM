@@ -11,13 +11,13 @@ module Heap
     end
 
     def add_class(java_class)
-      puts '[DEBUG] Adding class to class heap. ' << java_class.this_class_str
+      MRjvm::debug('Adding class to class heap. ' << java_class.this_class_str)
 
       @class_map[java_class.this_class_str.to_sym] = java_class
     end
 
     def get_class(class_name)
-      puts '[DEBUG] Getting class from heap. ' << class_name
+      MRjvm::debug('Getting class from heap. ' << class_name)
 
       java_class = @class_map[class_name.to_sym]
       if java_class.nil?
@@ -28,7 +28,7 @@ module Heap
     end
 
     def load_class(class_name)
-      puts '[DEBUG] Loading class: ' << class_name
+      MRjvm::debug('Loading class: ' << class_name)
 
       path = class_name + '.class'
       path = get_path(path)
@@ -38,7 +38,7 @@ module Heap
       java_class.class_heap = self
       add_class(java_class)
 
-      puts '[DEBUG] ' << java_class.to_s
+      MRjvm::debug('' << java_class.to_s)
 
       java_class
     end

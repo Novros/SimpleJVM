@@ -10,24 +10,23 @@ class ExecutionCore
     frame = frame_stack[fp]
 
     if (frame.method[:access_flags].to_i(16) & AccessFlagsReader::ACC_NATIVE) != 0
-      puts '[DEBUG] ----------------------------------------------------------------'
-      puts '[DEBUG] ' << fp.to_s
-      puts '[DEBUG][STACK] sp: ' << frame.sp.to_s
-      puts '[DEBUG][STACK] ' << frame.stack.to_s
+      MRjvm::debug(' ----------------------------------------------------------------')
+      MRjvm::debug(' ' << fp.to_s)
+      MRjvm::debug('[STACK] sp: ' << frame.sp.to_s)
+      MRjvm::debug('[STACK] ' << frame.stack.to_s)
       execute_native_method(frame_stack)
       return 0
     end
 
     byte_code = frame.method[:attributes][0][:code]
-    java_class = frame.frame_class
 
     while true
-      puts '[DEBUG] ----------------------------------------------------------------'
-      puts '[DEBUG] ' << fp.to_s << ':' << frame.pc.to_s << ' bytecode ' << byte_code[frame.pc]
-      puts '[DEBUG][STACK] sp: ' << frame.sp.to_s
-      puts '[DEBUG][STACK] ' << frame.stack.to_s
-      puts class_heap.to_s
-      puts object_heap.to_s
+      MRjvm::debug(' ----------------------------------------------------------------')
+      MRjvm::debug(' ' << fp.to_s << ':' << frame.pc.to_s << ' bytecode ' << byte_code[frame.pc])
+      MRjvm::debug('[STACK] sp: ' << frame.sp.to_s)
+      MRjvm::debug('[STACK] ' << frame.stack.to_s)
+      MRjvm::debug(class_heap.to_s)
+      MRjvm::debug(object_heap.to_s)
 
       byte_code_int = byte_code[frame.pc].to_i(16)
 
@@ -53,8 +52,7 @@ class ExecutionCore
           frame.pc += 2
         when OpCodes::BYTE_SIPUSH
           frame.sp += 1
-          # TODO Here must be load 2 bytes.
-          frame.stack[frame.sp] = (byte_code[frame.pc+1] + byte_code[frame.pc+2]).to_i(16)
+          frame.stack[frame.sp] = (byte_code[frame.pc+1,2].join('').to_i(16))
           frame.sp += 3
         when OpCodes::BYTE_LCONST_0, OpCodes::BYTE_LCONST_1
           frame.sp += 1
@@ -217,12 +215,12 @@ class ExecutionCore
 
         # -------------------------- Return from methods -------------------------
         when OpCodes::BYTE_IRETURN
-          puts '[DEBUG] Return from function.'
+          MRjvm::debug(' Return from function.')
 
           frame.stack[0] = frame.stack[frame.sp]
           return OpCodes::BYTE_IRETURN
         when OpCodes::BYTE__RETURN
-          puts '[DEBUG] Return from procedure.'
+          MRjvm::debug(' Return from procedure.')
 
           return 0
 
@@ -236,15 +234,15 @@ class ExecutionCore
 
         # -------------------------- Invoking methods ----------------------------
         when OpCodes::BYTE_INVOKEVIRTUAL
-          puts '[DEBUG] Invoking virtual method.'
+          MRjvm::debug(' Invoking virtual method.')
           execute_invoke(frame_stack, false)
           frame.pc += 3
         when OpCodes::BYTE_INVOKESPECIAL
-          puts '[DEBUG] Invoking special method.'
+          MRjvm::debug(' Invoking special method.')
           execute_invoke(frame_stack, false)
           frame.pc += 3
         when OpCodes::BYTE_INVOKESTATIC
-          puts '[DEBUG] Invkoking static method'
+          MRjvm::debug(' Invkoking static method')
           execute_invoke(frame_stack, true)
           frame.pc += 3
 
@@ -280,14 +278,14 @@ class ExecutionCore
   end
 
   def load_constant(java_class, index)
-    puts '[DEBUG] Loading constant from pool, class: ' << java_class.this_class_str << ', index: ' << index.to_s
+    MRjvm::debug(' Loading constant from pool, class: ' << java_class.this_class_str << ', index: ' << index.to_s)
 
     constant = java_class.constant_pool[index-1]
 
     case constant[:tag]
       when 8 # String
         value = java_class.get_string_from_constant_pool(constant[:string_index])
-        puts '[DEBUG] Loaded:"' << value << '"'
+        MRjvm::debug(' Loaded:"' << value << '"')
       else
         raise StandardError, '[ERROR] load_constant ' << constant[:tag].to_s
     end
@@ -300,7 +298,7 @@ class ExecutionCore
     value = frame_stack[fp].stack[frame_stack[fp].sp]
     var_list = object_heap.get_object(object_id).variables
 
-    puts '[DEBUG] Put field into object: ' << object_id << ' on index: ' << index << ' with value: ' << value
+    MRjvm::debug(' Put field into object: ' << object_id << ' on index: ' << index << ' with value: ' << value)
 
     var_list[index+1] = value
   end
@@ -310,7 +308,7 @@ class ExecutionCore
     object_id = frame.stack[frame.sp]
     var_list = object_heap.get_object(object_id).variables
 
-    puts '[DEBUG] Reading field from object: ' << object_id << ' on index: ' << index
+    MRjvm::debug(' Reading field from object: ' << object_id << ' on index: ' << index)
 
     frame.stack[frame.sp] = var_list[index+1]
   end
@@ -320,14 +318,14 @@ class ExecutionCore
     byte_code = frame.method[:attributes][0][:code]
     index = byte_code[frame.pc+1].to_i(16)
 
-    puts '[DEBUG] Executed new on class index: ' << index.to_s << ' in class ' << frame.frame_class.this_class_str
+    MRjvm::debug(' Executed new on class index: ' << index.to_s << ' in class ' << frame.frame_class.this_class_str)
 
-    frame.stack[frame.sp] = frame.frame_class.create_object(index, @object_heap)
+    frame.stack[frame.sp] = frame.frame_class.create_object(index, object_heap)
   end
 
   def execute_invoke(frame_stack, static)
     method_index = frame_stack[fp].method[:attributes][0][:code][frame_stack[fp].pc+1, 2].join('').to_i(16)
-    object_ref = frame_stack[fp].stack[frame_stack[fp].sp]
+    # object_ref = frame_stack[fp].stack[frame_stack[fp].sp] # TODO Add if using object variables
     constant = frame_stack[fp].frame_class.constant_pool[method_index-1]
 
     class_index = constant[:class_index]
@@ -341,7 +339,7 @@ class ExecutionCore
     method_name = frame_stack[fp].frame_class.get_string_from_constant_pool(constant[:name_index])
     method_descriptor = frame_stack[fp].frame_class.get_string_from_constant_pool(constant[:descriptor_index])
 
-    puts '[DEBUG] Invoking method: ' << method_name << ', descriptor: ' << method_descriptor
+    MRjvm::debug(' Invoking method: ' << method_name << ', descriptor: ' << method_descriptor)
 
     method_index = java_class.get_method_index(method_name) # TODO Add descriptor
     method = java_class.methods[method_index]
@@ -401,7 +399,7 @@ class ExecutionCore
     method_name = java_class.get_string_from_constant_pool(frame.method[:name_index])
     descriptor = java_class.get_string_from_constant_pool(frame.method[:descriptor_index])
 
-    puts '[DEBUG] Invoking native method: ' << method_name << ', descriptor: ' <<  descriptor
+    MRjvm::debug(' Invoking native method: ' << method_name << ', descriptor: ' <<  descriptor)
 
     signature = method_name
     native_method = get_native_method(signature)
