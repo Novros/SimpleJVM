@@ -42,8 +42,9 @@ module MRjvm
       frame_stack[start_frame].frame_class = java_class
       frame_stack[start_frame].method = java_class.methods[method_index]
       frame_stack[start_frame].stack = Heap::Frame.op_stack
-      frame_stack[start_frame].sp = frame_stack[start_frame].method[:attributes][0][:max_locals] # Why?
+      frame_stack[start_frame].sp = frame_stack[start_frame].method[:attributes][0][:max_locals]
       frame_stack[start_frame].stack[0] = object_id
+      frame_stack[start_frame].pc = 0
       executing_core.execute(frame_stack)
     end
   end
