@@ -49,10 +49,11 @@ module Heap
     end
 
     def to_s
-      string = "[DEBUG] Class heap\n"
+      string = "Class heap\n"
       @class_map.each do |item|
         string << "[DEBUG] \t#{item[0]} => #{item[1].this_class_str}\n"
       end
+      string << '[DEBUG]'
       string
     end
   end

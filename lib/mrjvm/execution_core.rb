@@ -9,11 +9,12 @@ class ExecutionCore
   def execute(frame_stack)
     frame = frame_stack[fp]
 
+
     if (frame.method[:access_flags].to_i(16) & AccessFlagsReader::ACC_NATIVE) != 0
-      MRjvm::debug(' ----------------------------------------------------------------')
-      MRjvm::debug(' ' << fp.to_s)
+      MRjvm::debug('----------------------------------------------------------------')
+      MRjvm::debug('' << fp.to_s)
       MRjvm::debug('[STACK] sp: ' << frame.sp.to_s)
-      MRjvm::debug('[STACK] ' << frame.stack.to_s)
+      MRjvm::debug(get_stack_string(frame))
       execute_native_method(frame_stack)
       return 0
     end
@@ -21,10 +22,10 @@ class ExecutionCore
     byte_code = frame.method[:attributes][0][:code]
 
     while true
-      MRjvm::debug(' ----------------------------------------------------------------')
-      MRjvm::debug(' ' << fp.to_s << ':' << frame.pc.to_s << ' bytecode ' << byte_code[frame.pc])
+      MRjvm::debug('----------------------------------------------------------------')
+      MRjvm::debug('' << fp.to_s << ':' << frame.pc.to_s << ' bytecode ' << byte_code[frame.pc])
       MRjvm::debug('[STACK] sp: ' << frame.sp.to_s)
-      MRjvm::debug('[STACK] ' << frame.stack.to_s)
+      MRjvm::debug(get_stack_string(frame))
       MRjvm::debug(class_heap.to_s)
       MRjvm::debug(object_heap.to_s)
 
@@ -241,12 +242,12 @@ class ExecutionCore
 
         # -------------------------- Return from methods -------------------------
         when OpCodes::BYTE_IRETURN
-          MRjvm::debug(' Return from function.')
+          MRjvm::debug('Return from function.')
 
           frame.stack[0] = frame.stack[frame.sp]
           return OpCodes::BYTE_IRETURN
         when OpCodes::BYTE__RETURN
-          MRjvm::debug(' Return from procedure.')
+          MRjvm::debug('Return from procedure.')
 
           return 0
 
@@ -260,15 +261,15 @@ class ExecutionCore
 
         # -------------------------- Invoking methods ----------------------------
         when OpCodes::BYTE_INVOKEVIRTUAL
-          MRjvm::debug(' Invoking virtual method.')
+          MRjvm::debug('Invoking virtual method.')
           execute_invoke(frame_stack, false)
           frame.pc += 3
         when OpCodes::BYTE_INVOKESPECIAL
-          MRjvm::debug(' Invoking special method.')
+          MRjvm::debug('Invoking special method.')
           execute_invoke(frame_stack, false)
           frame.pc += 3
         when OpCodes::BYTE_INVOKESTATIC
-          MRjvm::debug(' Invkoking static method')
+          MRjvm::debug('Invkoking static method')
           execute_invoke(frame_stack, true)
           frame.pc += 3
 
@@ -303,15 +304,23 @@ class ExecutionCore
     0
   end
 
+  def get_stack_string(frame)
+    stack_string = "[STACK]\n["
+    frame.stack.each_with_index do |i, index|
+      stack_string << "(#{index} => #{i}), "
+    end
+    stack_string << "]"
+  end
+
   def load_constant(java_class, index)
-    MRjvm::debug(' Loading constant from pool, class: ' << java_class.this_class_str << ', index: ' << index.to_s)
+    MRjvm::debug('Loading constant from pool, class: ' << java_class.this_class_str << ', index: ' << index.to_s)
 
     constant = java_class.constant_pool[index-1]
 
     case constant[:tag]
       when 8 # String
         value = java_class.get_string_from_constant_pool(constant[:string_index])
-        MRjvm::debug(' Loaded:"' << value << '"')
+        MRjvm::debug('Loaded:"' << value << '"')
       else
         raise StandardError, '[ERROR] load_constant ' << constant[:tag].to_s
     end
@@ -324,7 +333,7 @@ class ExecutionCore
     value = frame_stack[fp].stack[frame_stack[fp].sp]
     var_list = object_heap.get_object(object_id).variables
 
-    MRjvm::debug(' Put field into object: ' << object_id << ' on index: ' << index << ' with value: ' << value)
+    MRjvm::debug('Put field into object: ' << object_id << ' on index: ' << index << ' with value: ' << value)
 
     var_list[index+1] = value
   end
@@ -392,10 +401,10 @@ class ExecutionCore
     execute(frame_stack)
     @fp -= 1
 
-    if method_descriptor.include? '()V'
-       discard_stack -= 1
-    end
-    frame_stack[fp].sp -= discard_stack
+    # if method_descriptor.include? '()V'
+    #    discard_stack -= 1
+    # end
+    # frame_stack[fp].sp -= discard_stack
   end
 
   def get_method_parameters_stack_count(method_descriptor)
@@ -412,6 +421,7 @@ class ExecutionCore
         count +=2
       end
     end
+    MRjvm::debug('[METHOD][COUNT] ' << count.to_s)
     count
   end
 
@@ -427,7 +437,7 @@ class ExecutionCore
 
     MRjvm::debug(' Invoking native method: ' << method_name << ', descriptor: ' <<  descriptor)
 
-    signature = method_name
+    signature = class_name + '@' + method_name + descriptor
     native_method = get_native_method(signature)
 
     runtime_environment = Native::RuntimeEnvironment.new
@@ -437,11 +447,33 @@ class ExecutionCore
     runtime_environment.fp = @fp
 
     return_value = runtime_environment.run(native_method)
-    frame.stack[i] = return_value if descriptor.include? '()V'
+    frame.stack[frame.sp] = return_value # if descriptor.include? '()V'
   end
 
   # TODO: Only for testing
   def get_native_method(signature)
-    'native_print'
+    if signature.include? 'java/lang/String@valueOf(F)Ljava/lang/String;'
+      'string_value_of_f'
+    elsif signature.include? 'java/lang/String@valueOf(J)Ljava/lang/String;'
+      'string_value_of_j'
+    elsif signature.include? 'java/lang/StringBuilder@append(Ljava/lang/String;)Ljava/lang/StringBuilder;'
+      'string_builder_append_i'
+    elsif signature.include? 'java/lang/StringBuilder@append(I)Ljava/lang/StringBuilder;'
+      'string_builder_append_i'
+    elsif signature.include? 'java/lang/StringBuilder@append(C)Ljava/lang/StringBuilder;'
+      'string_builder_append_c'
+    elsif signature.include? 'java/lang/StringBuilder@append(Z)Ljava/lang/StringBuilder;'
+      'string_builder_append_z'
+    elsif signature.include? 'java/lang/StringBuilder@append(Ljava/lang/Object;)Ljava/lang/StringBuilder;'
+      'string_builder_append_o'
+    elsif signature.include? 'java/lang/StringBuilder@append(F)Ljava/lang/StringBuilder;'
+      'string_builder_append_f'
+    elsif signature.include? 'java/lang/StringBuilder@append(J)Ljava/lang/StringBuilder;'
+      'string_builder_append_j'
+    elsif signature.include? 'java/lang/StringBuilder@toString()Ljava/lang/String;'
+      'string_builder_to_string_string'
+    elsif signature.include? 'Test@Print(Ljava/lang/String;)V'
+      'native_print'
+    end
   end
 end

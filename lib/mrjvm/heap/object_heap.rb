@@ -16,7 +16,7 @@ module Heap
     end
 
     def create_object(java_class)
-      MRjvm::debug('[DEBUG] Creating object for class: ' << java_class.this_class_str)
+      MRjvm::debug('Creating object for class: ' << java_class.this_class_str)
 
       object = Object.new
       object.heap_id = @object_id
@@ -29,7 +29,7 @@ module Heap
     end
 
     def create_string_object (string, class_heap)
-      MRjvm::debug(' Creating string object for string: ' << string)
+      MRjvm::debug('Creating string object for string: ' << string)
 
       java_class = class_heap.get_class('java/lang/String')
       heap_id = create_object(java_class)
@@ -43,7 +43,7 @@ module Heap
     end
 
     def get_object(heap_id)
-      MRjvm::debug(' Reading object from object heap with id:' << heap_id.to_s)
+      MRjvm::debug('Reading object from object heap with id:' << heap_id.to_s)
 
       @object_map[heap_id.to_s.to_sym]
     end
@@ -53,10 +53,11 @@ module Heap
     end
 
     def to_s
-      string = "[DEBUG] Object heap\n"
+      string = "Object heap\n"
       @object_map.each do |item|
         string << "[DEBUG] \t#{item[0]} => #{item[1].variables[0].this_class_str}\n"
       end
+      string << '[DEBUG]'
       string
     end
 
