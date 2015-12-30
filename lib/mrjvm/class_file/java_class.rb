@@ -28,6 +28,10 @@ module ClassFile
       get_string_from_constant_pool(@constant_pool[super_class-1][:name_index])
     end
 
+    def get_super_class
+      class_heap.get_class(super_class_str)
+    end
+
     def get_method_index(method_name)
       methods.each_with_index do |method, index|
         return index if get_string_from_constant_pool(method[:name_index]) == method_name

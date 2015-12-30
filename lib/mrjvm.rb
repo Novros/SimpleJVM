@@ -27,7 +27,10 @@ module MRjvm
 
       object_heap = Heap::ObjectHeap.new
 
-      frame_stack = Array.new(20, Heap::Frame.new)
+      frame_stack = []
+      20.times do
+        frame_stack.push(Heap::Frame.new)
+      end
       start_frame = 0
       Heap::Frame.base_frame = frame_stack[start_frame]
       Heap::Frame.op_stack = Array.new(100, nil) # Variable, 100
