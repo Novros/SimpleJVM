@@ -325,14 +325,6 @@ class ExecutionCore
     frame.stack[frame.sp] = frame.frame_class.create_object(index, @object_heap)
   end
 
-  def execute_invoke_static(frame)
-    # code here
-  end
-
-  def execute_invoke_virtual(frame)
-    # code here
-  end
-
   def execute_invoke(frame_stack, static)
     method_index = frame_stack[fp].method[:attributes][0][:code][frame_stack[fp].pc+1, 2].join('').to_i(16)
     object_ref = frame_stack[fp].stack[frame_stack[fp].sp]
@@ -400,7 +392,7 @@ class ExecutionCore
   end
 
   def execute_native_method(frame_stack)
-    puts '[DEBUG] Invoking native method.'
+    MRjvm::debug('[DEBUG] Invoking native method.')
 
     frame = frame_stack[@fp]
 
@@ -411,7 +403,7 @@ class ExecutionCore
 
     puts '[DEBUG] Invoking native method: ' << method_name << ', descriptor: ' <<  descriptor
 
-    signature = class_name << '@' << method_name << descriptor
+    signature = method_name
     native_method = get_native_method(signature)
 
     runtime_environment = Native::RuntimeEnvironment.new
@@ -426,6 +418,6 @@ class ExecutionCore
 
   # TODO: Only for testing
   def get_native_method(signature)
-    return 'native_print'
+    'native_print'
   end
 end
