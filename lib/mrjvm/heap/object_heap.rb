@@ -32,9 +32,10 @@ module Heap
       puts '[DEBUG] Creating string object for string: ' << string
 
       java_class = class_heap.get_class('java/lang/String')
-      object = create_object(java_class)
+      heap_id = create_object(java_class)
+      object = get_object(heap_id)
       object.variables[1] = string
-      object
+      heap_id
     end
 
     def create_object_array(java_class, count)
@@ -42,7 +43,7 @@ module Heap
     end
 
     def get_object(heap_id)
-      puts '[DEBUG] Reading object from object heap with id: ' << heap_id.to_s
+      puts '[DEBUG] Reading object from object heap with id:' << heap_id.to_s
 
       @object_map[heap_id.to_s.to_sym]
     end

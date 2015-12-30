@@ -9,21 +9,23 @@ class ExecutionCore
   def execute(frame_stack)
     frame = frame_stack[fp]
 
-    if (frame.method[:access_flags].to_i(16) & AccessFlagsReader::ACC_SYNTHETIC) != 0
+    if (frame.method[:access_flags].to_i(16) & AccessFlagsReader::ACC_NATIVE) != 0
+      puts '[DEBUG] ----------------------------------------------------------------'
+      puts '[DEBUG] ' << fp.to_s
+      puts '[DEBUG][STACK] sp: ' << frame.sp.to_s
+      puts '[DEBUG][STACK] ' << frame.stack.to_s
       execute_native_method(frame_stack)
       return 0
     end
 
-    # TODO This must return bytecode of method.
     byte_code = frame.method[:attributes][0][:code]
     java_class = frame.frame_class
-    method_string = java_class.get_string_from_constant_pool(frame.method[:name_index])
 
-    # TODO Some debug things
     while true
-
       puts '[DEBUG] ----------------------------------------------------------------'
-      puts '[DEBUG] ' << fp.to_s << ':' << frame.pc.to_s << ' Next bytecode ' << byte_code[frame.pc]
+      puts '[DEBUG] ' << fp.to_s << ':' << frame.pc.to_s << ' bytecode ' << byte_code[frame.pc]
+      puts '[DEBUG][STACK] sp: ' << frame.sp.to_s
+      puts '[DEBUG][STACK] ' << frame.stack.to_s
       puts class_heap.to_s
       puts object_heap.to_s
 
@@ -332,9 +334,9 @@ class ExecutionCore
   end
 
   def execute_invoke(frame_stack, static)
-    method_index = frame_stack[fp].method[:attributes][0][:code][frame_stack[fp].pc+1].to_i(16)
+    method_index = frame_stack[fp].method[:attributes][0][:code][frame_stack[fp].pc+1, 2].join('').to_i(16)
     object_ref = frame_stack[fp].stack[frame_stack[fp].sp]
-    constant = frame_stack[fp].frame_class.constant_pool[method_index]
+    constant = frame_stack[fp].frame_class.constant_pool[method_index-1]
 
     class_index = constant[:class_index]
     name_and_type_index = constant[:name_and_type_index]
@@ -346,6 +348,8 @@ class ExecutionCore
     constant = frame_stack[fp].frame_class.constant_pool[name_and_type_index-1]
     method_name = frame_stack[fp].frame_class.get_string_from_constant_pool(constant[:name_index])
     method_descriptor = frame_stack[fp].frame_class.get_string_from_constant_pool(constant[:descriptor_index])
+
+    puts '[DEBUG] Invoking method: ' << method_name << ', descriptor: ' << method_descriptor
 
     method_index = java_class.get_method_index(method_name) # TODO Add descriptor
     method = java_class.methods[method_index]
@@ -359,7 +363,7 @@ class ExecutionCore
     params = get_method_parameters_stack_count(method_descriptor) + 1
     params -= 1 if static
     discard_stack = params
-    if (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_SYNTHETIC) != 0
+    if (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_NATIVE) != 0
     else
       discard_stack += method[:attributes][0][:max_locals]
     end
@@ -367,8 +371,6 @@ class ExecutionCore
     frame_stack[fp+1].stack = Heap::Frame.op_stack
     frame_stack[fp+1].sp = frame_stack[fp].sp + discard_stack - 1
     frame_stack[fp+1].pc = 0
-
-    puts '[DEBUG] Invoking method ' << method_name << ' ' << method_descriptor
 
     @fp += 1
     execute(frame_stack)
@@ -382,18 +384,17 @@ class ExecutionCore
 
   def get_method_parameters_stack_count(method_descriptor)
     count = 0
-    puts '[DEBUG][TODO] ' << method_descriptor
     for i in 1..method_descriptor.size
       if method_descriptor[i] == 'L'
+        count += 1
         while method_descriptor[i] != ';'
           i += 1
         end
       elsif method_descriptor[i] == ')'
         break
       elsif method_descriptor[i] == 'J' || method_descriptor[i] == 'D'
-        count +=1
+        count +=2
       end
-      count += 1
     end
     count
   end
@@ -401,12 +402,14 @@ class ExecutionCore
   def execute_native_method(frame_stack)
     puts '[DEBUG] Invoking native method.'
 
-    frame = frame_stack[0]
+    frame = frame_stack[@fp]
 
     java_class = frame.frame_class
     class_name = java_class.this_class_str
     method_name = java_class.get_string_from_constant_pool(frame.method[:name_index])
     descriptor = java_class.get_string_from_constant_pool(frame.method[:descriptor_index])
+
+    puts '[DEBUG] Invoking native method: ' << method_name << ', descriptor: ' <<  descriptor
 
     signature = class_name << '@' << method_name << descriptor
     native_method = get_native_method(signature)
@@ -415,9 +418,10 @@ class ExecutionCore
     runtime_environment.frame_stack = frame_stack
     runtime_environment.class_heap = class_heap
     runtime_environment.object_heap = object_heap
+    runtime_environment.fp = @fp
 
     return_value = runtime_environment.run(native_method)
-    frame.stack[0] = return_value if descriptor.include? '()V'
+    frame.stack[i] = return_value if descriptor.include? '()V'
   end
 
   # TODO: Only for testing
