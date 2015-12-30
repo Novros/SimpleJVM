@@ -23,7 +23,7 @@ module MRjvm
     def self::run(file)
       class_heap = Heap::ClassHeap.new
       java_class = class_heap.load_class('Test')
-      #java_class_object = class_heap.load_class('java/lang/Object')
+      class_heap.load_class('java/lang/Object')
 
       object_heap = Heap::ObjectHeap.new
 
