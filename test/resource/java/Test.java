@@ -3,7 +3,7 @@ public class Test {
     public native void Print(String text);
 
     public void hello() {
-        //Print("Hello from program.");
+        Print("Hello from program.");
         int a = 3;
         Print("a is " + a);
         /*int b = 2;
