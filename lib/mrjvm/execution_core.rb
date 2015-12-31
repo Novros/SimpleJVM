@@ -195,42 +195,42 @@ class ExecutionCore
           frame.sp -= 1
         when OpCodes::BYTE_IF_ICMPEQ
           if frame.stack[frame.sp - 1] == frame.stack[frame.sp]
-            frame.pc += byte_code[frame.pc+1].to_i(16)
+            frame.pc += byte_code[frame.pc+1,2].join('').to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPNE
           if frame.stack[frame.sp - 1] != frame.stack[frame.sp]
-            frame.pc += byte_code[frame.pc+1].to_i(16)
+            frame.pc += byte_code[frame.pc+1,2].join('').to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPLT
           if frame.stack[frame.sp - 1] < frame.stack[frame.sp]
-            frame.pc += byte_code[frame.pc+1].to_i(16)
+            frame.pc += byte_code[frame.pc+1,2].join('').to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPGE
           if frame.stack[frame.sp - 1] >= frame.stack[frame.sp]
-            frame.pc += byte_code[frame.pc+1].to_i(16)
+            frame.pc += byte_code[frame.pc+1,2].join('').to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPGT
           if frame.stack[frame.sp - 1] > frame.stack[frame.sp]
-            frame.pc += byte_code[frame.pc+1].to_i(16)
+            frame.pc += byte_code[frame.pc+1,2].join('').to_i(16)
           else
             frame.pc += 3
           end
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPLE
           if frame.stack[frame.sp - 1] <= frame.stack[frame.sp]
-            frame.pc += byte_code[frame.pc+1].to_i(16)
+            frame.pc += byte_code[frame.pc+1,2].join('').to_i(16)
           else
             frame.pc += 3
           end
@@ -238,7 +238,7 @@ class ExecutionCore
 
         # ---------------------------------- Goto --------------------------------
         when OpCodes::BYTE__GOTO
-          frame.pc += byte_code[frame.pc+1].to_i(16)
+          frame.pc += byte_code[frame.pc+1,2].join('').to_i(16)
 
         # -------------------------- Return from methods -------------------------
         when OpCodes::BYTE_IRETURN
@@ -256,7 +256,7 @@ class ExecutionCore
           get_field(frame)
           frame.pc += 3
         when OpCodes::BYTE_PUTFIELD
-          put_field(frame_stack)
+          put_field(frame)
           frame.pc += 3
 
         # -------------------------- Invoking methods ----------------------------
@@ -327,23 +327,23 @@ class ExecutionCore
     value
   end
 
-  def put_field(frame_stack)
-    index = frame_stack[fp].method[:attributes][0][:code][frame_stack[fp].pc+1].to_i(16)
-    object_id = frame_stack[fp].stack[frame_stack[fp].sp - 1]
-    value = frame_stack[fp].stack[frame_stack[fp].sp]
+  def put_field(frame)
+    index = frame.method[:attributes][0][:code][frame.pc+1,2].join('').to_i(16)
+    object_id = frame.stack[frame.sp - 1]
+    value = frame.stack[frame.sp]
     var_list = object_heap.get_object(object_id).variables
 
-    MRjvm::debug('Put field into object: ' << object_id << ' on index: ' << index << ' with value: ' << value)
+    MRjvm::debug('Put field into object: ' << object_id.to_s << ' on index: ' << index.to_s << ' with value: ' << value.to_s)
 
     var_list[index+1] = value
   end
 
   def get_field(frame)
-    index = frame.method[:attributes][0][:code][frame.pc+1].to_i(16)
+    index = frame.method[:attributes][0][:code][frame.pc+1,2].join('').to_i(16)
     object_id = frame.stack[frame.sp]
     var_list = object_heap.get_object(object_id).variables
 
-    MRjvm::debug(' Reading field from object: ' << object_id << ' on index: ' << index)
+    MRjvm::debug(' Reading field from object: ' << object_id.to_s << ' on index: ' << index.to_s)
 
     frame.stack[frame.sp] = var_list[index+1]
   end
@@ -351,7 +351,7 @@ class ExecutionCore
   def execute_new(frame)
     frame.sp += 1
     byte_code = frame.method[:attributes][0][:code]
-    index = byte_code[frame.pc+1].to_i(16)
+    index = byte_code[frame.pc+1,2].join('').to_i(16)
 
     MRjvm::debug(' Executed new on class index: ' << index.to_s << ' in class ' << frame.frame_class.this_class_str)
 
@@ -472,7 +472,7 @@ class ExecutionCore
       'string_builder_append_j'
     elsif signature.include? 'java/lang/StringBuilder@toString()Ljava/lang/String;'
       'string_builder_to_string_string'
-    elsif signature.include? 'Test@Print(Ljava/lang/String;)V'
+    elsif signature.include? 'Factorial@Print(Ljava/lang/String;)V'
       'native_print'
     end
   end
