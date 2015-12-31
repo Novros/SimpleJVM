@@ -37,7 +37,7 @@ module MRjvm
 
       # Load entry point class.
       # java_class = class_heap.load_class_from_file(file)
-      java_class = class_heap.load_class('Factorial')
+      java_class = class_heap.load_class('Test')
       # Load object class.
       class_heap.load_class('java/lang/Object')
 
