@@ -7,8 +7,8 @@ require 'mrjvm/execution_core'
 
 module MRjvm
   DEBUG_STRING = '[DEBUG] '
-  FRAME_STACK_SIZE = 20
-  OPERAND_STACK_SIZE = 100
+  FRAME_STACK_SIZE = 20 # TODO Add option to change via cli
+  OPERAND_STACK_SIZE = 100 # TODO Add option to change via cli
 
   ##
   # Debug function if DEBUG is true.
@@ -33,10 +33,12 @@ module MRjvm
     def self::run(file)
       # TODO File is not used, because of testing
       class_heap = Heap::ClassHeap.new
-      java_class = class_heap.load_class('Factorial')
-      class_heap.load_class('java/lang/Object')
-
       object_heap = Heap::ObjectHeap.new
+
+      # Load entry point class.
+      java_class = class_heap.load_class('Test')
+      # Load object class.
+      class_heap.load_class('java/lang/Object')
 
       frame_stack = []
       FRAME_STACK_SIZE.times do
@@ -45,15 +47,11 @@ module MRjvm
       Heap::Frame.op_stack = Array.new(OPERAND_STACK_SIZE, nil)
 
       object_id = object_heap.create_object(java_class) # Create instance. # TODO Entry function must be static.
-      method_index = java_class.get_method_index('entry') # Here must be name of method, which will be started.
+      method_index = java_class.get_method_index('hello', '()V') # Here must be name of method, which will be started.
 
+      frame_stack[0] = Heap::Frame.initialize_with_class_method(java_class, java_class.methods[method_index])
       start_frame = frame_stack[0]
-      start_frame.frame_class = java_class
-      start_frame.method = java_class.methods[method_index]
-      start_frame.stack = Heap::Frame.op_stack
-      start_frame.sp = start_frame.method[:attributes][0][:max_locals]
-      start_frame.stack[0] = object_id
-      start_frame.pc = 0
+      start_frame.locals[0] = object_id
 
       executing_core = ExecutionCore.new
       executing_core.class_heap = class_heap

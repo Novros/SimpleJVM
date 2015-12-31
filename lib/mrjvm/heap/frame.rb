@@ -1,33 +1,44 @@
 module Heap
   class Frame
     # pc = program_counter, sp = stack_pointer
-    attr_accessor :frame_class, :method, :pc, :sp, :stack
+    attr_accessor :java_class, :method, :pc, :sp, :stack #, :locals
 
-    @@base_frame = nil
     @@op_stack = nil
+    @@locals = Array.new(4,nil)
 
     def initialize
-      @sp = -1
-      @frame_class = nil
+      @java_class = nil
+      @method = nil
       @pc = 0
+      @sp = -1
       @stack = nil
+      @locals = nil
     end
 
-    def self::initialize_with_sp(sp)
+    def self::initialize_with_class_method(java_class, method)
       frame = Frame.new
-      frame.sp = sp
-      frame.frame_class = nil
-      frame.pc = 0
-      frame.stack = nil
+      frame.java_class = java_class
+      frame.method = method
+      frame.stack = @@op_stack
+      #frame.locals = Array.new(method[:attributes][0][:max_locals], nil)
       frame
     end
 
-    def self::base_frame
-      @@base_frame
+    def self::initialize_with_class_native_method(java_class, method)
+      frame = Frame.new
+      frame.java_class = java_class
+      frame.method = method
+      frame.stack = @@op_stack
+      #frame.locals = []
+      frame
     end
 
-    def self::base_frame=(base_frame)
-      @@base_frame = base_frame
+    def locals
+      @@locals
+    end
+
+    def locals=(locals)
+      @@locals=locals
     end
 
     def self::op_stack

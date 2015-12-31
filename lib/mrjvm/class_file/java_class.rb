@@ -32,9 +32,12 @@ module ClassFile
       class_heap.get_class(super_class_str)
     end
 
-    def get_method_index(method_name)
+    def get_method_index(method_name, method_descriptor)
       methods.each_with_index do |method, index|
-        return index if get_string_from_constant_pool(method[:name_index]) == method_name
+        if get_string_from_constant_pool(method[:name_index]) == method_name &&
+           get_string_from_constant_pool(method[:descriptor_index]) == method_descriptor
+          return index
+        end
       end
       -1
     end
