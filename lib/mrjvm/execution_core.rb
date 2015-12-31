@@ -69,8 +69,8 @@ class ExecutionCore
           frame.pc += 2
         when OpCodes::BYTE_SIPUSH
           frame.sp += 1
-          frame.stack[frame.sp] = (byte_code[frame.pc+1,2].join('').to_i(16))
-          frame.sp += 3
+          frame.stack[frame.sp] = byte_code[frame.pc+1,2].join('').to_i(16)
+          frame.pc += 3
         when OpCodes::BYTE_LDC
           frame.sp += 1
           frame.stack[frame.sp] = load_constant(frame.java_class, byte_code[frame.pc+1].to_i(16))
@@ -245,7 +245,8 @@ class ExecutionCore
         # -------------------------- Return from methods -------------------------
         when OpCodes::BYTE_IRETURN, OpCodes::BYTE_LRETURN, OpCodes::BYTE_FRETURN, OpCodes::BYTE_DRETURN, OpCodes::BYTE_ARETURN
           MRjvm::debug('Return from function.')
-          return frame.stack[frame.sp]
+          frame.sp -= 1
+          return frame.stack[frame.sp+1]
         when OpCodes::BYTE__RETURN
           MRjvm::debug('Return from procedure.')
           return 0
@@ -307,7 +308,7 @@ class ExecutionCore
         when OpCodes::BYTE_IFNULL
           (frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
-        when OpCodes::BYTE_IFNOnNULL
+        when OpCodes::BYTE_IFNONNULL
           (!frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         else
@@ -410,6 +411,10 @@ class ExecutionCore
     end
     parameters_count = get_method_parameters_count(method_descriptor) # + 1 # + 1 for object_ref
     frame_stack[fp+1].sp = frame_stack[fp].sp
+    frame_stack[fp+1].locals[0] = frame_stack[fp].locals[0]
+    for i in 0..parameters_count do
+      frame_stack[fp+1].locals[1+i] = frame_stack[fp].stack[frame_stack[fp].sp-parameters_count+i+1]
+    end
 
     @fp += 1
     return_value = execute(frame_stack)
@@ -423,9 +428,9 @@ class ExecutionCore
   def get_method_parameters_count(method_descriptor)
     count = 0
     for i in 1..method_descriptor.size
-      if method_descriptor[i] == 'L' || method_descriptor[i] == 'J' || method_descriptor[i] == 'D'
+      if method_descriptor[i] == 'L' || method_descriptor[i] == 'I' || method_descriptor[i] == 'J' || method_descriptor[i] == 'D'
         count += 1
-        while method_descriptor[i] != ';'
+        until method_descriptor[i] == ';' || method_descriptor[i] == ')'
           i += 1
         end
       elsif method_descriptor[i] == ')'

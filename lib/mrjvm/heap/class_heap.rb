@@ -56,5 +56,19 @@ module Heap
       string << '[DEBUG]'
       string
     end
+
+    def load_class_from_file(file)
+      MRjvm::debug('Loading class from file: ' << file)
+
+      reader = ClassFileReader.new(file)
+      reader.parse_content
+      java_class = reader.class_file
+      java_class.class_heap = self
+      add_class(java_class)
+
+      MRjvm::debug('' << java_class.to_s)
+
+      java_class
+    end
   end
 end
