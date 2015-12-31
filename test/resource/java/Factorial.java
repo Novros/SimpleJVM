@@ -13,13 +13,23 @@ public class Factorial {
 
     public void entry() {
         Print("Factorial numbers.");
-        int a = 2;
-        int b = 2;
+        int a = 10;
+        int b = 120;
+        int t = test(1,2);
+        Print("" + t);
         int c = factorial(a);
         if( c == b)
             Print("Result is 120");
         else
-            Print("Result is something bad.");
+            Print("Result is something another: " + c);
+    }
+
+    private int test(int a, int b) {
+        if (a > b) {
+            return 0;
+        } else {
+            return test(a+1,b);
+        }
     }
 
     private int factorial(int n) {

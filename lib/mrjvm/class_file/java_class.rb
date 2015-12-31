@@ -4,7 +4,7 @@ module ClassFile
                   :constant_pool_count, :constant_pool, :access_flags,
                   :this_class, :super_class, :interfaces_count, :interfaces,
                   :fields_count, :fields, :methods_count, :methods,
-                  :attributes_count, :attributes, :class_heap
+                  :attributes_count, :attributes, :class_heap, :static_variables
 
     def initialize
       @constant_pool = []
@@ -12,6 +12,7 @@ module ClassFile
       @fields = []
       @methods = []
       @attributes = []
+      @static_variables = []
     end
 
     # !!!! TODO Maybe create some internal representation???
@@ -74,6 +75,11 @@ module ClassFile
       string << "[DEBUG][METHODS] methods: \n"
       @methods.each do |method|
         string << "[DEBUG][METHOD] \t#{method}\n"
+      end
+
+      string << "[DEBUG][STATIC] values: \n"
+      @static_variables.each do |variable|
+        string << "[DEBUG][STATIC] \t#{variable}"
       end
       string
     end

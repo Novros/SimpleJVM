@@ -36,7 +36,8 @@ module MRjvm
       object_heap = Heap::ObjectHeap.new
 
       # Load entry point class.
-      java_class = class_heap.load_class('Test')
+      # java_class = class_heap.load_class_from_file(file)
+      java_class = class_heap.load_class('Factorial')
       # Load object class.
       class_heap.load_class('java/lang/Object')
 
@@ -47,7 +48,7 @@ module MRjvm
       Heap::Frame.op_stack = Array.new(OPERAND_STACK_SIZE, nil)
 
       object_id = object_heap.create_object(java_class) # Create instance. # TODO Entry function must be static.
-      method_index = java_class.get_method_index('hello', '()V') # Here must be name of method, which will be started.
+      method_index = java_class.get_method_index('entry', '()V') # Here must be name of method, which will be started.
 
       frame_stack[0] = Heap::Frame.initialize_with_class_method(java_class, java_class.methods[method_index])
       start_frame = frame_stack[0]
