@@ -31,10 +31,12 @@ module ClassFile
       class_heap.get_class(super_class_str)
     end
 
-    def get_method_index(method_name, method_descriptor)
+    def get_method_index(method_name, method_descriptor, static)
       methods.each_with_index do |method, index|
+        static_method = (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_STATIC != 0)
         if get_from_constant_pool(method[:name_index]) == method_name &&
-           get_from_constant_pool(method[:descriptor_index]) == method_descriptor
+           get_from_constant_pool(method[:descriptor_index]) == method_descriptor &&
+           static_method == static
           return index
         end
       end

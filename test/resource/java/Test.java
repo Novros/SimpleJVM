@@ -10,7 +10,17 @@ public class Test {
         this.b = 120;
     }
 
-    public native void Print(String str);
+    public static native void Print(String str);
+
+    public static void main() {
+        Print("Hello");
+        testEntry("lol");
+        Test.testEntry("neco");
+    }
+
+    public static void testEntry(String text) {
+        Print("Neco " + text);
+    }
 
     public void entry() {
         // Test.stat = 5;
@@ -22,8 +32,8 @@ public class Test {
 
         Print("" + array[1] + ", " + array[0]);
 
-        Test[] tarray = new Test[10];
-        tarray[0] = new Test();
+        // Test[] tarray = new Test[10];
+        // trray[0] = new Test();
 
         /*Print("Factorial numbers.");
         int a = 10;

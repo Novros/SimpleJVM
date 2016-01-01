@@ -7,8 +7,6 @@ require 'mrjvm/execution_core'
 
 module MRjvm
   DEBUG_STRING = '[DEBUG] '
-  FRAME_STACK_SIZE = 20 # TODO Add option to change via cli
-  OPERAND_STACK_SIZE = 100 # TODO Add option to change via cli
 
   ##
   # Debug function if DEBUG is true.
@@ -20,9 +18,16 @@ module MRjvm
   # Entry point class.
   class MRjvm
 
+    attr_accessor :op_size, :frame_size
+
+    def initialize
+      @op_size = 100
+      @frame_size = 20
+    end
+
     ##
     # Print class file to output.
-    def self::print_file(file)
+    def print_file(file)
       reader = ClassFileReader.new(file)
       reader.parse_content
       puts reader.class_file
@@ -30,25 +35,22 @@ module MRjvm
 
     ##
     # Run file with class Main and function main.
-    def self::run(file)
-      # TODO File is not used, because of testing
+    def run(file)
       class_heap = Heap::ClassHeap.new
       object_heap = Heap::ObjectHeap.new
 
       # Load entry point class.
-      # java_class = class_heap.load_class_from_file(file)
-      java_class = class_heap.load_class('Test')
+      java_class = class_heap.load_class_from_file(file)
       # Load object class.
       class_heap.load_class('java/lang/Object')
 
       frame_stack = []
-      FRAME_STACK_SIZE.times do
+      @frame_size.times do
         frame_stack.push(Heap::Frame.new)
       end
-      Heap::Frame.op_stack = Array.new(OPERAND_STACK_SIZE, nil)
+      Heap::Frame.op_stack = Array.new(@op_size, nil)
 
-      object_id = object_heap.create_object(java_class) # Create instance. # TODO Entry function must be static.
-      method_index = java_class.get_method_index('entry', '()V') # Here must be name of method, which will be started.
+      method_index = java_class.get_method_index('main', '()V', true)
 
       frame_stack[0] = Heap::Frame.initialize_with_class_method(java_class, java_class.methods[method_index])
       start_frame = frame_stack[0]

@@ -1,6 +1,5 @@
 # TODO
 - byte_code
-    - static methods
     - interface methods
     - dynamic methods
 - basic objects
@@ -20,7 +19,7 @@ Our implementation of jvm.
 
 ## Installation
 
-To install MR.JVM type rake install.
+To install MR.JVM type **rake install.**
 
 ## Structure of codes
 
@@ -28,4 +27,4 @@ MR.JVM will start codes from class Main and static method main. All other source
 
 ## Usage
 
-Type mrjvm [path-to-main-file]
+Type **mrjvm [path-to-main-file]**. For help you can type **mrjvm -h** or **mrjvm --help**.
