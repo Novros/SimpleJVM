@@ -16,6 +16,9 @@ public class Test {
         Print("Hello");
         testEntry("lol");
         Test.testEntry("neco");
+
+        Factorial factorial = new Factorial();
+        factorial.entry();
     }
 
     public static void testEntry(String text) {
