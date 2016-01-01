@@ -381,7 +381,7 @@ class ExecutionCore
           execute_invoke(frame_stack, false)
           frame.pc += 3
         when OpCodes::BYTE_INVOKESTATIC
-           MRjvm::debug('Invkoking static method')
+           MRjvm::debug('Invoking static method')
            execute_invoke(frame_stack, true)
            frame.pc += 3
         when OpCodes::BYTE_INVOKEINTERFACE
@@ -556,7 +556,6 @@ class ExecutionCore
   end
 
   # -------------------------------------------------------------------------
-  # TODO Add support for static
   def execute_invoke(frame_stack, static)
     method_index = frame_stack[fp].method[:attributes][0][:code][frame_stack[fp].pc+1, 2].join('').to_i(16)
     method_constant = frame_stack[fp].java_class.constant_pool[method_index-1]
@@ -571,7 +570,7 @@ class ExecutionCore
     method_descriptor = frame_stack[fp].java_class.get_from_constant_pool(method_constant[:descriptor_index])
 
     java_class = class_heap.get_class(class_name)
-    method_index = java_class.get_method_index(method_name, method_descriptor)
+    method_index = java_class.get_method_index(method_name, method_descriptor, static)
     method = java_class.methods[method_index]
 
     MRjvm::debug('Invoking method: ' << method_name << ', descriptor: ' << method_descriptor)
@@ -586,9 +585,14 @@ class ExecutionCore
     end
     parameters_count = get_method_parameters_count(method_descriptor) # + 1 # + 1 for object_ref
     frame_stack[fp+1].sp = frame_stack[fp].sp
-    frame_stack[fp+1].locals[0] = frame_stack[fp].locals[0]
-    for i in 0..parameters_count do
-      frame_stack[fp+1].locals[1+i] = frame_stack[fp].stack[frame_stack[fp].sp-parameters_count+i+1]
+    if static
+      for i in 0...parameters_count do
+        frame_stack[fp+1].locals[i] = frame_stack[fp].stack[frame_stack[fp].sp-parameters_count+1+i]
+      end
+    else
+      for i in 0..parameters_count do
+        frame_stack[fp+1].locals[i] = frame_stack[fp].stack[frame_stack[fp].sp-parameters_count+i]
+      end
     end
 
     @fp += 1
@@ -598,14 +602,17 @@ class ExecutionCore
     frame_stack[fp].sp -= parameters_count
     frame_stack[fp].stack[frame_stack[fp].sp] = return_value # At top should be return value
     frame_stack[fp].sp -= 1 if method_descriptor.include? ')V'
+    frame_stack[fp].sp += 1 if static
   end
 
   def execute_dynamic_method(frame_stack)
-    # code here
+    # TODO Implements
+    raise StandardError, 'Dynamic methods not implemented.'
   end
 
   def execute_interface_method(frame_stack)
-    # code here
+    # TODO Implements
+    raise StandardError, 'Interface methods not implemented.'
   end
 
   # -------------------------------------------------------------------------

@@ -11,7 +11,7 @@ module MRjvm
     def self.parse(args)
       options = {}
       opt_parser = OptionParser.new do |opts|
-        opts.banner = 'Usage: mrjvm [path-to-file]'
+        opts.banner = 'Usage: mrjvm [options] [path-to-file]'
 
         opts.on_tail('-h', '--help', 'Print this help.') do
           puts opts
@@ -25,6 +25,14 @@ module MRjvm
 
         opts.on('-d', '--debug', 'Run in debug. Print some info about run of vm.') do
           options[:debug] = true
+        end
+
+        opts.on('--frame-size', 'Size of stack for frame methods.') do
+          options[:frame_size] = true
+        end
+
+        opts.on('--op-size', 'Size of operand stack.') do
+          options[:op_size] = true
         end
 
         begin
@@ -51,11 +59,22 @@ module MRjvm
     DEBUG = true
   end
 
-  if ARGV[0].nil?
-    puts 'Missing argument file.'
+  jvm = MRjvm.new()
+  options.each_with_index do |item, index|
+    case item[0].to_s
+      when 'frame_size'
+        jvm.frame_size = ARGV[index].to_i
+      when 'op_size'
+        jvm.op_size = ARGV[index].to_i
+      else
+    end
+  end
+
+  file = ARGV.last
+  if file.nil? || !File.file?(file)
+    puts 'Missing argument file or it is not file.'
     exit(1)
   end
 
-  file = ARGV[0]
-  MRjvm.run(file)
+  jvm.run(file)
 end
