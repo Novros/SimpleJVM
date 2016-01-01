@@ -51,6 +51,7 @@ module MRjvm
       Heap::Frame.op_stack = Array.new(@op_size, nil)
 
       method_index = java_class.get_method_index('main', '()V', true)
+      raise StandardError, 'Class not contains static method main!' if method_index == -1
 
       frame_stack[0] = Heap::Frame.initialize_with_class_method(java_class, java_class.methods[method_index])
       start_frame = frame_stack[0]
