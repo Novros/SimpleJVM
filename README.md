@@ -2,7 +2,6 @@
 - byte code
     - Add support for static variables, methods
     - Check support of long, double, float
-    - Add missing OpCodes
     - Add support for array into execution_core and object_heap
     - Add support for bitwise operations
     - Add support for conversions
@@ -19,24 +18,16 @@
 
 # MRjvm
 
-My own implementation of jvm.
+Our implementation of jvm.
 
 ## Installation
 
-Add this line to your application's Gemfile:
+To install MR.JVM type rake install.
 
-```ruby
-gem 'mrjvm'
-```
+## Structure of codes
 
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install mrjvm 
+MR.JVM will start codes from class Main and static method main.
 
 ## Usage
 
-Just build and install mrjvm. Then type mrjvm [file]
+Type mrjvm [path-to-main-file]
