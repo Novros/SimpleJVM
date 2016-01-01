@@ -1,10 +1,8 @@
 # TODO
-- byte code
-    - Add support for static variables, methods
-    - Check support of long, double, float
-    - Add support for array into execution_core and object_heap
-    - Add support for bitwise operations
-    - Add support for conversions
+- byte_code
+    - static methods
+    - interface methods
+    - dynamic methods
 - basic objects
     - Implement java/lang/Object
     - Implement java/lang/String

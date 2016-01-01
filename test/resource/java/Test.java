@@ -1,10 +1,11 @@
 public class Test {
 
+    public static int stat = 0;
+
     int a = 5;
     int b = 120;
 
     public Test() {
-        // TODO No working
         this.a = 5;
         this.b = 120;
     }
@@ -12,7 +13,19 @@ public class Test {
     public native void Print(String str);
 
     public void entry() {
-        Print("Factorial numbers.");
+        // Test.stat = 5;
+        // Print("" + Test.stat);
+
+        int[] array = new int[10];
+        array[1] = 5;
+        array[0] = 546;
+
+        Print("" + array[1] + ", " + array[0]);
+
+        Test[] tarray = new Test[10];
+        tarray[0] = new Test();
+
+        /*Print("Factorial numbers.");
         int a = 10;
         int b = 120;
         int t = test(1,2);

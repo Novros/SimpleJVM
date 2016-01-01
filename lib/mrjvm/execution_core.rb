@@ -20,8 +20,7 @@ class ExecutionCore
       return execute_native_method(frame_stack)
     end
 
-    byte_code = frame.method[:attributes][0][:code]
-
+    byte_code = get_method_byte_code(frame)
     while true
       MRjvm::debug('----------------------------------------------------------------')
       MRjvm::debug('' << fp.to_s << ':' << frame.pc.to_s << ' bytecode ' << byte_code[frame.pc])
@@ -116,7 +115,7 @@ class ExecutionCore
           frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_ALOAD_0]
           frame.pc += 1
         when OpCodes::BYTE_IALOAD, OpCodes::BYTE_LALOAD, OpCodes::BYTE_FALOAD, OpCodes::BYTE_DALOAD, OpCodes::BYTE_AALOAD, OpCodes::BYTE_BALOAD, OpCodes::BYTE_CALOAD, OpCodes::BYTE_SALOAD
-          frame.stack[frame.sp-1] = object_heap.get_value_from_array(frame.stack[frame.sp-1], frame.stack[frame.sp])
+          frame.stack[frame.sp-1] = object_heap.get_value_from_array(frame.stack[frame.sp-1], frame.stack[frame.sp].value)
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_ISTORE, OpCodes::BYTE_LSTORE, OpCodes::BYTE_FSTORE, OpCodes::BYTE_DSTORE, OpCodes::BYTE_ASTORE
@@ -132,20 +131,20 @@ class ExecutionCore
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_FSTORE_0, OpCodes::BYTE_FSTORE_1, OpCodes::BYTE_FSTORE_2, OpCodes::BYTE_FSTORE_3
-          frame.stack[byte_code_int - OpCodes::BYTE_FSTORE_0] = frame.stack[frame.sp]
+          frame.locals[byte_code_int - OpCodes::BYTE_FSTORE_0] = frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_DSTORE_0, OpCodes::BYTE_DSTORE_1, OpCodes::BYTE_DSTORE_2, OpCodes::BYTE_DSTORE_3
-          frame.stack[byte_code_int - OpCodes::BYTE_DSTORE_0] = frame.stack[frame.sp]
+          frame.locals[byte_code_int - OpCodes::BYTE_DSTORE_0] = frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_ASTORE_0, OpCodes::BYTE_ASTORE_1, OpCodes::BYTE_ASTORE_2, OpCodes::BYTE_ASTORE_3
-          frame.stack[byte_code_int - OpCodes::BYTE_ASTORE_0] = frame.stack[frame.sp]
+          frame.locals[byte_code_int - OpCodes::BYTE_ASTORE_0] = frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_IASTORE, OpCodes::BYTE_LASTORE, OpCodes::BYTE_FASTORE, OpCodes::BYTE_DASTORE, OpCodes::BYTE_AASTORE, OpCodes::BYTE_BASTORE, OpCodes::BYTE_CASTORE, OpCodes::BYTE_SASTORE
           frame.sp -= 3
-          object_heap.get_object(frame.stack[frame.sp+1]).variables[frame.stack[frame.sp+2]] = frame.stack[frame.sp+3]
+          object_heap.get_object(frame.stack[frame.sp+1]).variables[frame.stack[frame.sp+2].value] = frame.stack[frame.sp+3]
           frame.pc += 1
         when OpCodes::BYTE_POP
           frame.sp -= 1
@@ -174,7 +173,7 @@ class ExecutionCore
           frame.stack[frame.sp] = frame.stack[frame.sp-1]
           frame.stack[frame.sp-1] = temp
           frame.pc += 1
-        # -------------------------- Couting operations ----------------------------
+        # -------------------------- Counting operations ----------------------------
         when OpCodes::BYTE_IADD, OpCodes::BYTE_LADD, OpCodes::BYTE_FADD, OpCodes::BYTE_DADD
           frame.stack[frame.sp-1] = frame.stack[frame.sp-1] + frame.stack[frame.sp]
           frame.sp -= 1
@@ -418,7 +417,7 @@ class ExecutionCore
         # -------------------------------------------------------------------------
         # when OpCodes::BYTE_WIDE
         when OpCodes::BYTE_MULTIANEWARRAY
-          execute_new_multi_array(frame)
+          execute_new_a_multi_array(frame)
           frame.pc += 4
         # -------------------------------------------------------------------------
         when OpCodes::BYTE_IFNULL
@@ -467,56 +466,93 @@ class ExecutionCore
 
   # -------------------------------------------------------------------------
   def put_field(frame)
-    index = frame.method[:attributes][0][:code][frame.pc+1,2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
     object_id = frame.stack[frame.sp - 1]
     value = frame.stack[frame.sp]
     var_list = object_heap.get_object(object_id).variables
 
-    MRjvm::debug('Put field into object: ' << object_id.to_s << ' on index: ' << index.to_s << ' with value: ' << value.to_s)
+    MRjvm::debug("Putting value into field of object: #{object_id} on index: #{index} with value: #{value}.")
 
     var_list[index+1] = value
     frame.sp -= 2
   end
 
   def get_field(frame)
-    index = frame.method[:attributes][0][:code][frame.pc+1,2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
     object_id = frame.stack[frame.sp]
     var_list = object_heap.get_object(object_id).variables
 
-    MRjvm::debug(' Reading field from object: ' << object_id.to_s << ' on index: ' << index.to_s)
+    MRjvm::debug("Reading field from object: #{object_id} on index: #{index}.")
 
     frame.stack[frame.sp] = var_list[index+1]
   end
 
   def put_static_field(frame)
-    # code here
+    value = frame.stack[frame.sp]
+    frame.sp -= 1
+
+    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    frame.java_class.static_variables[index] = value
+
+    MRjvm::debug("Putting value into static field of class: #{frame.java_class.this_class_str}, #{index}, #{value}.")
   end
 
   def get_static_field(frame)
-    # code here
+    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    value = frame.java_class.static_variables[index]
+    frame.sp += 1
+    frame.stack[frame.sp] = value
+
+    MRjvm::debug("Reading value from static field of class: #{frame.java_class.this_class_str}, #{index}.")
   end
 
   # -------------------------------------------------------------------------
   def execute_new(frame)
     frame.sp += 1
-    byte_code = frame.method[:attributes][0][:code]
+    byte_code = get_method_byte_code(frame)
     index = byte_code[frame.pc+1,2].join('').to_i(16)
 
-    MRjvm::debug(' Executed new on class index: ' << index.to_s << ' in class ' << frame.java_class.this_class_str)
+    MRjvm::debug('Executed new on class index: ' << index.to_s << ' in class ' << frame.java_class.this_class_str)
 
     frame.stack[frame.sp] = frame.java_class.create_object(index, object_heap)
   end
 
   def execute_new_array(frame)
-    # code here
+    type = get_method_byte_code(frame)[frame.pc+1].to_i(16)
+    count = frame.stack[frame.sp]
+
+    MRjvm::debug("Creating new array, type: #{type}, count: #{count}.")
+
+    frame.stack[frame.sp] = object_heap.create_new_array(type, count)
   end
 
   def execute_a_new_array(frame)
-    # code here
+    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    class_name = frame.java_class.get_from_constant_pool(frame.java_class.constant_pool[index-1][:name_index])
+    count = frame.stack[frame.sp]
+
+    MRjvm::debug("Creating new array, type: #{class_name}, count: #{count}.")
+
+    frame.stack[frame.sp] = object_heap.create_new_array(class_name, count)
   end
 
-  def execute_new_multi_array(frame)
-    # code here
+  def execute_new_a_multi_array(frame)
+    # TODO Check if works
+    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    class_name = frame.java_class.get_from_constant_pool(frame.java_class.constant_pool[index-1][:name_index])
+    dimensions = get_method_byte_code(frame)[frame.pc+1].to_i(16)
+    count = frame.stack[frame.sp-dimensions]
+    array_pointer = object_heap.create_new_array(class_name, count)
+    array = object_heap.get_object(array_pointer)
+
+    MRjvm::debug("Creating new array, type: #{class_name}, count: #{count}, dimensions: #{dimensions}.")
+
+    (1...dimensions).each do |i|
+      count = frame.stack[frame.sp-dimensions+i]
+      array.variables[i] = Array.new(count,nil)
+    end
+    frame.sp -= dimensions
+    frame.stack[frame.sp] = array_pointer
   end
 
   # -------------------------------------------------------------------------
@@ -589,6 +625,10 @@ class ExecutionCore
     count
   end
 
+  def get_method_byte_code(frame)
+    frame.method[:attributes][0][:code]
+  end
+
   # -------------------------------------------------------------------------
   def execute_native_method(frame_stack)
     MRjvm::debug('Invoking native method.')
@@ -645,7 +685,7 @@ class ExecutionCore
     frame.locals.each_with_index do |item, index|
       locals_string << "(#{index} => #{item}), "
     end
-    locals_string << "]"
+    locals_string << ']'
   end
 
   def get_stack_string(frame)
@@ -653,6 +693,6 @@ class ExecutionCore
     frame.stack.each_with_index do |i, index|
       stack_string << "(#{index} => #{i}), "
     end
-    stack_string << "]"
+    stack_string << ']'
   end
 end

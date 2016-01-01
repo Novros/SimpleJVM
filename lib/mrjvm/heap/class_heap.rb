@@ -36,6 +36,7 @@ module Heap
       reader.parse_content
       java_class = reader.class_file
       java_class.class_heap = self
+      initialize_class_variables(java_class)
       add_class(java_class)
 
       MRjvm::debug('' << java_class.to_s)
@@ -64,11 +65,20 @@ module Heap
       reader.parse_content
       java_class = reader.class_file
       java_class.class_heap = self
+      initialize_class_variables(java_class)
       add_class(java_class)
 
       MRjvm::debug('' << java_class.to_s)
 
       java_class
+    end
+
+    def initialize_class_variables(java_class)
+      count = 0
+      java_class.fields.each do |field|
+        count += 1 if (field[:access_flags].to_i(16) & AccessFlagsReader::ACC_STATIC) != 0
+      end
+      java_class.static_variables = Array.new(count,nil)
     end
   end
 end

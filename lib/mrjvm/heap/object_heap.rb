@@ -44,19 +44,19 @@ module Heap
     end
 
     def create_new_array(type, count)
-      MRjvm::debug('Creating array for count: ' << count)
+      MRjvm::debug('Creating array for count: ' << count.value.to_s)
 
       object = Object.new
       object.heap_id = @object_id
-      object.type = 'Array@' + type
-      object.variables = Array.new(count, nil)
+      object.type = 'Array@' + type.to_s
+      object.variables = Array.new(count.value, nil)
       @object_map[object.heap_id.to_s.to_sym] = object
       @object_id += 1
       StackVariable.new(VARIABLE_ARRAY, @object_id-1)
     end
 
     def get_value_from_array(array_pointer, index)
-      MRjvm::debug('Reading value from array with heap_id:' + array_pointer.value.to_s + ' on index: ' + index)
+      MRjvm::debug('Reading value from array with heap_id:' + array_pointer.value.to_s + ' on index: ' + index.to_s)
 
       array_object = @object_map[array_pointer.value.to_s.to_sym]
       array_object.variables[index]
@@ -65,7 +65,11 @@ module Heap
     def to_s
       string = "Object heap\n"
       @object_map.each do |item|
-        string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str}\n"
+        if item[1].type.is_a? String
+          string << "[DEBUG] \t#{item[0]} => #{item[1].type}\n"
+        else
+          string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str}\n"
+        end
       end
       string << '[DEBUG]'
       string
