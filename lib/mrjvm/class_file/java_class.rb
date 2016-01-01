@@ -69,12 +69,12 @@ module ClassFile
         string << "[DEBUG][FIELD] \t#{field}\n"
       end
 
-      string << "[DEBUG][METHODS] methods: \n"
+      string << "[DEBUG][METHODS] methods(#{@methods.size}): \n"
       @methods.each do |method|
         string << "[DEBUG][METHOD] \t#{method}\n"
       end
 
-      string << "[DEBUG][STATIC] values: \n"
+      string << "[DEBUG][STATIC] values(#{@static_variables.size}): \n"
       @static_variables.each do |variable|
         string << "[DEBUG][STATIC] \t#{variable}"
       end
