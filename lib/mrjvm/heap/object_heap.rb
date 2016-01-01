@@ -1,5 +1,3 @@
-require_relative 'types'
-
 module Heap
 
   class Object
@@ -49,18 +47,22 @@ module Heap
       object_pointer
     end
 
-    def create_object_array(java_class, count)
-      # TODO Implement
-    end
-
     def get_object(object_pointer)
       MRjvm::debug('Reading object from object heap with id:' << object_pointer.heap_id.to_s)
 
       @object_map[object_pointer.heap_id.to_s.to_sym]
     end
 
-    def create_new_array
-      # TODO Implement
+    def create_new_array(count)
+      MRjvm::debug('Creating array for count: ' << count)
+
+      object = Object.new
+      object.heap_id = @object_id
+      object.type = 'Array'
+      object.variables = Array.new(count, nil)
+      @object_map[object.heap_id.to_s.to_sym] = object
+      @object_id += 1
+      ObjectPointer.new(@object_id-1)
     end
 
     def to_s

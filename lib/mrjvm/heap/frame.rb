@@ -4,7 +4,6 @@ module Heap
     attr_accessor :java_class, :method, :pc, :sp, :stack, :locals
 
     @@op_stack = nil
-    #@@locals = Array.new(4,nil)
 
     def initialize
       @java_class = nil
@@ -32,14 +31,6 @@ module Heap
       frame.locals = []
       frame
     end
-
-    # def locals
-    #   @@locals
-    # end
-    #
-    # def locals=(locals)
-    #   @@locals=locals
-    # end
 
     def self::op_stack
       @@op_stack

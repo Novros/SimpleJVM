@@ -26,7 +26,7 @@ To install MR.JVM type rake install.
 
 ## Structure of codes
 
-MR.JVM will start codes from class Main and static method main.
+MR.JVM will start codes from class Main and static method main. All other source codes must be in this folder or in other subfolders.
 
 ## Usage
 
