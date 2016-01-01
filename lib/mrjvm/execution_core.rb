@@ -1,5 +1,7 @@
 require_relative 'class_file/reader/modules/access_flags_reader'
 require_relative 'heap/frame'
+require_relative 'heap/class_heap'
+require_relative 'heap/object_heap'
 require_relative 'op_codes'
 require_relative 'native/runtime_environment'
 
@@ -30,8 +32,6 @@ class ExecutionCore
       MRjvm::debug(object_heap.to_s)
 
       byte_code_int = byte_code[frame.pc].to_i(16)
-      # TODO byte_code_next_int = byte_code[frame.pc+1].to_i(16)
-
       case byte_code_int
         #-------------------------------------------------------------------------
         when OpCodes::BYTE_NOP
@@ -44,32 +44,40 @@ class ExecutionCore
           frame.pc += 1
         when OpCodes::BYTE_ICONST_M1, OpCodes::BYTE_ICONST_0, OpCodes::BYTE_ICONST_1, OpCodes::BYTE_ICONST_2, OpCodes::BYTE_ICONST_3, OpCodes::BYTE_ICONST_4, OpCodes::BYTE_ICONST_5
           frame.sp += 1
-          frame.stack[frame.sp] = byte_code_int - OpCodes::BYTE_ICONST_0
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, byte_code_int - OpCodes::BYTE_ICONST_0)
           frame.pc += 1
         when OpCodes::BYTE_LCONST_0, OpCodes::BYTE_LCONST_1
           frame.sp += 1
-          frame.stack[frame.sp] = byte_code_int - OpCodes::BYTE_LCONST_0
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_LONG, byte_code_int - OpCodes::BYTE_LCONST_0)
           frame.pc += 1
-        when OpCodes::BYTE_FCONST_0, OpCodes::BYTE_DCONST_0
+        when OpCodes::BYTE_FCONST_0
           frame.sp += 1
-          frame.stack[frame.sp] = 0.0
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, 0.0)
           frame.pc += 1
-        when OpCodes::BYTE_FCONST_1, OpCodes::BYTE_DCONST_1
+        when OpCodes::BYTE_FCONST_1
           frame.sp += 1
-          frame.stack[frame.sp] = 1.0
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, 1.0)
           frame.pc += 1
         when OpCodes::BYTE_FCONST_2
           frame.sp += 1
-          frame.stack[frame.sp] = 2.0
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, 2.0)
+          frame.pc += 1
+        when  OpCodes::BYTE_DCONST_0
+          frame.sp += 1
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, 0.0)
+          frame.pc += 1
+        when OpCodes::BYTE_DCONST_1
+          frame.sp += 1
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, 1.0)
           frame.pc += 1
         #-------------------------------------------------------------------------
         when OpCodes::BYTE_BIPUSH
           frame.sp += 1
-          frame.stack[frame.sp] = byte_code[frame.pc+1].to_i(16)
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, byte_code[frame.pc+1].to_i(16))
           frame.pc += 2
         when OpCodes::BYTE_SIPUSH
           frame.sp += 1
-          frame.stack[frame.sp] = byte_code[frame.pc+1,2].join('').to_i(16)
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_SHORT, byte_code[frame.pc+1,2].join('').to_i(16))
           frame.pc += 3
         when OpCodes::BYTE_LDC
           frame.sp += 1
@@ -79,7 +87,10 @@ class ExecutionCore
           frame.sp += 1
           frame.stack[frame.sp] = load_constant(frame.java_class, byte_code[frame.pc+1,2].join('').to_i(16))
           frame.pc += 3
-        # when OpCodes::BYTE_LDC2_W # TODO Load double or long from constant pool
+        when OpCodes::BYTE_LDC2_W
+          frame.sp += 1
+          frame.stack[frame.sp] = load_constant(frame.java_class, byte_code[frame.pc+1,2].join('').to_i(16))
+          frame.pc += 3
         when OpCodes::BYTE_ILOAD, OpCodes::BYTE_LLOAD, OpCodes::BYTE_FLOAD, OpCodes::BYTE_DLOAD, OpCodes::BYTE_ALOAD
           frame.sp += 1
           frame.stack[frame.sp] = frame.locals[byte_code[frame.pc+1].to_i(16)]
@@ -104,8 +115,10 @@ class ExecutionCore
           frame.sp += 1
           frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_ALOAD_0]
           frame.pc += 1
-        # TODO Add support for arrays
-        # when OpCodes::BYTE_IALOAD, OpCodes::BYTE_LALOAD, OpCodes::BYTE_FALOAD, OpCodes::BYTE_DALOAD, OpCodes::BYTE_AALOAD, PpCodes::BYTE_BALOAD, OpCodes::BYTE_CALOAD, OpCodes::BYTE_SALOAD
+        when OpCodes::BYTE_IALOAD, OpCodes::BYTE_LALOAD, OpCodes::BYTE_FALOAD, OpCodes::BYTE_DALOAD, OpCodes::BYTE_AALOAD, OpCodes::BYTE_BALOAD, OpCodes::BYTE_CALOAD, OpCodes::BYTE_SALOAD
+          frame.stack[frame.sp-1] = object_heap.get_value_from_array(frame.stack[frame.sp-1], frame.stack[frame.sp])
+          frame.sp -= 1
+          frame.pc += 1
         when OpCodes::BYTE_ISTORE, OpCodes::BYTE_LSTORE, OpCodes::BYTE_FSTORE, OpCodes::BYTE_DSTORE, OpCodes::BYTE_ASTORE
           frame.locals[byte_code[frame.pc+1].to_i(16)] = frame.stack[frame.sp]
           frame.sp -= 1
@@ -130,14 +143,17 @@ class ExecutionCore
           frame.stack[byte_code_int - OpCodes::BYTE_ASTORE_0] = frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
-        # TODO Add support for array
-        # when OpCodes::BYTE_IASTORE, OpCodes::BYTE_LASTORE, OpCodes::BYTE_FASTORE, OpCodes::BYTE_DASTORE, OpCodes::BYTE_AASTORE, OpCodes::BYTE_BASTORE, OpCodes::BYTE_CASTORE, OpCodes::BYTE_SASTORE
+        when OpCodes::BYTE_IASTORE, OpCodes::BYTE_LASTORE, OpCodes::BYTE_FASTORE, OpCodes::BYTE_DASTORE, OpCodes::BYTE_AASTORE, OpCodes::BYTE_BASTORE, OpCodes::BYTE_CASTORE, OpCodes::BYTE_SASTORE
+          frame.sp -= 3
+          object_heap.get_object(frame.stack[frame.sp+1]).variables[frame.stack[frame.sp+2]] = frame.stack[frame.sp+3]
+          frame.pc += 1
         when OpCodes::BYTE_POP
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_POP2
-          # TODO IF double only one value
-          frame.sp -=2
+          (frame.stack[frame.sp].type == Heap::VARIABLE_DOUBLE || frame.stack[frame.sp].type == Heap::VARIABLE_LONG) ?
+              frame.sp -=1 :
+              frame.sp -= 2
           frame.pc += 1
         when OpCodes::BYTE_DUP
           frame.stack[frame.sp+1] = frame.stack[frame.sp]
@@ -175,12 +191,102 @@ class ExecutionCore
           frame.stack[frame.sp-1] = frame.stack[frame.sp-1] / frame.stack[frame.sp]
           frame.sp -= 1
           frame.pc += 1
-        when OpCodes::BYTE_IINC
-          # TODO Check
-          frame.stack[frame.pc+1] += byte_code[frame.pc+2]
-          frame.pc += 3
+        when OpCodes::BYTE_IREM, OpCodes::BYTE_LREM, OpCodes::BYTE_FREM, OpCodes::BYTE_DREM
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] % frame.stack[frame.sp]
+          frame.sp -= 1
+          frame.pc += 1
         # -------------------------- Bitwise operations ----------------------------
+        when OpCodes::BYTE_INEG, OpCodes::BYTE_LNEG, OpCodes::BYTE_FNEG, OpCodes::BYTE_DNEG
+          frame.stack[frame.sp] = !frame.stack[frame.sp]
+          frame.pc += 1
+        when OpCodes::BYTE_ISHL, OpCodes::BYTE_LSHL
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] << frame.stack[frame.sp]
+          frame.sp -= 1
+          frame.pc += 1
+        when OpCodes::BYTE_ISHR, OpCodes::BYTE_LSHR, OpCodes::BYTE_LUSHR
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] >> frame.stack[frame.sp]
+          frame.sp -= 1
+          frame.pc += 1
+        # when OpCodes::BYTE_IUSHR
+        when OpCodes::BYTE_IAND, OpCodes::BYTE_LAND
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] & frame.stack[frame.sp]
+          frame.sp -= 1
+          frame.pc += 1
+        when OpCodes::BYTE_IOR, OpCodes::BYTE_LOR
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] | frame.stack[frame.sp]
+          frame.sp -= 1
+          frame.pc += 1
+        when OpCodes::BYTE_IXOR, OpCodes::BYTE_LXOR
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-1] ^ frame.stack[frame.sp]
+          frame.sp -= 1
+          frame.pc += 1
+        when OpCodes::BYTE_IINC
+          frame.locals[byte_code[frame.pc+1].to_i(16)] += byte_code[frame.pc+2].to_i(16)
+          frame.pc += 3
         # -------------------------- Conversion operations ----------------------------
+        when OpCodes::BYTE_I2L
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_LONG, frame.stack[frame.sp].value)
+          frame.pc += 1
+        when OpCodes::BYTE_I2F
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, frame.stack[frame.sp].value.to_f)
+          frame.pc += 1
+        when OpCodes::BYTE_I2D
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, frame.stack[frame.sp].value.to_f)
+          frame.pc += 1
+        when OpCodes::BYTE_L2I
+          long_value = frame.stack[frame.sp].value
+          int_value = ''
+          (0...32).each do |i|
+            int_value << long_value[31-i].to_s
+          end
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, int_value.to_i(2))
+          frame.pc += 1
+        when OpCodes::BYTE_L2F
+          # TODO float and double has not same size
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, frame.stack[frame.sp].value.to_f)
+          frame.pc += 1
+        when OpCodes::BYTE_L2D
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, frame.stack[frame.sp].value.to_f)
+          frame.pc += 1
+        when OpCodes::BYTE_F2I
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, frame.stack[frame.sp].value.to_i)
+          frame.pc += 1
+        when OpCodes::BYTE_F2L
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_LONG, frame.stack[frame.sp].value.to_i)
+          frame.pc += 1
+        when OpCodes::BYTE_F2D
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, frame.stack[frame.sp].value)
+          frame.pc += 1
+        when OpCodes::BYTE_D2I
+          # TODO Double and int has not same size
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, frame.stack[frame.sp].value.to_i)
+          frame.pc += 1
+        when OpCodes::BYTE_D2L
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_LONG, frame.stack[frame.sp].value.to_i)
+          frame.pc += 1
+        when OpCodes::BYTE_D2F
+          # TODO float and double has not same size
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, frame.stack[frame.sp].value)
+          frame.pc += 1
+        when OpCodes::BYTE_I2B
+          value = frame.stack[frame.sp].value
+          int_value = ''
+          (0...8).each do |i|
+            int_value << value[7-i].to_s
+          end
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_BYTE, int_value.to_i(2))
+          frame.pc += 1
+        when OpCodes::BYTE_I2C
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_CHAR, frame.stack[frame.sp].value.to_s)
+          frame.pc += 1
+        when OpCodes::BYTE_I2S
+          int_value = frame.stack[frame.sp].value
+          short_value = ''
+          (0...16).each do |i|
+            short_value << int_value[15-i].to_s
+          end
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_SHORT, short_value.to_i(2))
+          frame.pc += 1
         # -------------------------- Control flow ----------------------------
         when OpCodes::BYTE_LCMP, OpCodes::BYTE_FCMPL, OpCodes::BYTE_FCMPG, OpCodes::BYTE_DCMPL, OpCodes::BYTE_DCMPG
           frame.stack[frame.sp-1] = frame.stack[frame.sp] <=> frame.stack[frame.sp-1]
@@ -204,12 +310,12 @@ class ExecutionCore
         when OpCodes::BYTE_IFLE
           (frame.stack[frame.sp] <= 0) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
-        when OpCodes::BYTE_IF_ICMPEQ
+        when OpCodes::BYTE_IF_ICMPEQ, OpCodes::BYTE_IF_ACMPEQ
           (frame.stack[frame.sp - 1] == frame.stack[frame.sp]) ?
               frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) :
               frame.pc += 3
           frame.sp -= 2
-        when OpCodes::BYTE_IF_ICMPNE
+        when OpCodes::BYTE_IF_ICMPNE, OpCodes::BYTE_IF_ACMPNE
           (frame.stack[frame.sp - 1] != frame.stack[frame.sp]) ?
               frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) :
               frame.pc += 3
@@ -234,12 +340,15 @@ class ExecutionCore
               frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) :
               frame.pc += 3
           frame.sp -= 2
-
         # -----------------------------------------------------------------------
         when OpCodes::BYTE__GOTO
           frame.pc += byte_code[frame.pc+1,2].join('').to_i(16)
-        # when OpCodes::BYTE_JSR
-        # when OpCodes::BYTE_RET
+        when OpCodes::BYTE_JSR
+          frame.sp += 1
+          frame.stack[frame.sp] = frame.pc
+          frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16)
+        when OpCodes::BYTE_RET
+          frame.pc = frame.locals[byte_code[frame.pc+1].to_i(16)]
         # when OpCodes::BYTE_TABLESWITCH
         # when OpCodes::BYTE_LOOKUPSWITCH
         # -------------------------- Return from methods -------------------------
@@ -249,19 +358,20 @@ class ExecutionCore
           return frame.stack[frame.sp+1]
         when OpCodes::BYTE__RETURN
           MRjvm::debug('Return from procedure.')
-          return 0
-
+          return
         # -------------------------------- Fields --------------------------------
-        # TODO Add support for static
-        # when OpCodes::BYTE_GETSTATIC
-        # when OpCodes::BYTE_PUTSTATIC
+        when OpCodes::BYTE_GETSTATIC
+          get_static_field(frame)
+          frame.pc += 3
+        when OpCodes::BYTE_PUTSTATIC
+          put_static_field(frame)
+          frame.pc += 3
         when OpCodes::BYTE_GETFIELD
           get_field(frame)
           frame.pc += 3
         when OpCodes::BYTE_PUTFIELD
           put_field(frame)
           frame.pc += 3
-
         # -------------------------- Invoking methods ----------------------------
         when OpCodes::BYTE_INVOKEVIRTUAL
           MRjvm::debug('Invoking virtual method.')
@@ -271,46 +381,60 @@ class ExecutionCore
           MRjvm::debug('Invoking special method.')
           execute_invoke(frame_stack, false)
           frame.pc += 3
-        # TODO Add support for static
-        # when OpCodes::BYTE_INVOKESTATIC
-        #   MRjvm::debug('Invkoking static method')
-        #   execute_invoke(frame_stack, true)
-        #   frame.pc += 3
-        # when OpCodes::BYTE_INVOKEINTERFACE
-        # when OpCodes::BYTE_INVOKEDYNAMIC
-
+        when OpCodes::BYTE_INVOKESTATIC
+           MRjvm::debug('Invkoking static method')
+           execute_invoke(frame_stack, true)
+           frame.pc += 3
+        when OpCodes::BYTE_INVOKEINTERFACE
+          MRjvm::debug('Invoking interface method')
+          execute_interface_method(frame_stack)
+          frame.pc += 5
+        when OpCodes::BYTE_INVOKEDYNAMIC
+          MRjvm::debug('Invoking dynamic method')
+          execute_dynamic_method(frame_stack)
+          frame.pc += 5
         # -------------------------------------------------------------------------
         when OpCodes::BYTE__NEW
           execute_new(frame)
           frame.pc += 3
-        # TODO Add support for arrays
-        # when OpCodes::BYTE_NEWARRAY
-        #   execute_new_array(frame)
-        #   frame.pc += 2
-        # when OpCodes::BYTE_ANEWARRAY
-        #   execute_a_new_array(frame)
-        #   frame.pc +=3
-        # when OpCodes::BYTE_ARRAYLENGTH
+        when OpCodes::BYTE_NEWARRAY
+          execute_new_array(frame)
+          frame.pc += 2
+        when OpCodes::BYTE_ANEWARRAY
+          execute_a_new_array(frame)
+          frame.pc +=3
+        when OpCodes::BYTE_ARRAYLENGTH
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, object_heap.get_object(frame.stack[frame.sp]).values.length)
+          frame.pc +=1
 
-        # ------------------------------- Goto ------------------------------------
-        when OpCodes::BYTE_ATHROW
-          raise StandardError # Need exceptions
-
+        # ------------------------------- Exceptions -------------------------------
+        # when OpCodes::BYTE_ATHROW
         # -------------------------------------------------------------------------
         # when OpCodes::BYTE_CHECKCAST
         # when OpCodes::BYTE_INSTANCEOF
-
         # -------------------------- Thread synchronization -----------------------
-        when OpCodes::BYTE_MONITORENTER
-          raise StandardError # Need object monitor
-        when OpCodes::BYTE_MONITOREXIT
-          raise StandardError # Need object monitor
+        # when OpCodes::BYTE_MONITORENTER
+        # when OpCodes::BYTE_MONITOREXIT
+        # -------------------------------------------------------------------------
+        # when OpCodes::BYTE_WIDE
+        when OpCodes::BYTE_MULTIANEWARRAY
+          execute_new_multi_array(frame)
+          frame.pc += 4
+        # -------------------------------------------------------------------------
         when OpCodes::BYTE_IFNULL
           (frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFNONNULL
           (!frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
+        # -------------------------------------------------------------------------
+        when OpCodes::BYTE_GOTO_W
+          frame.pc += byte_code[frame.pc+1,4].join('').to_i(16)
+        when OpCodes::BYTE_JSR_W
+          frame.sp += 1
+          frame.stack[frame.sp] = frame.pc
+          frame.pc += byte_code[frame.pc+1,4].join('').to_i(16)
+        # -------------------------------------------------------------------------
         else
           raise StandardError, byte_code[frame.pc]
       end
@@ -318,37 +442,30 @@ class ExecutionCore
     0
   end
 
-  def get_locals_string(frame)
-    locals_string = "[LOCALS]\n["
-    frame.locals.each_with_index do |item, index|
-      locals_string << "(#{index} => #{item}), "
-    end
-    locals_string << "]"
-  end
-
-  def get_stack_string(frame)
-    stack_string = "[STACK]\n["
-    frame.stack.each_with_index do |i, index|
-      stack_string << "(#{index} => #{i}), "
-    end
-    stack_string << "]"
-  end
-
+  # -------------------------------------------------------------------------
   def load_constant(java_class, index)
     MRjvm::debug('Loading constant from pool, class: ' << java_class.this_class_str << ', index: ' << index.to_s)
 
     constant = java_class.constant_pool[index-1]
 
     case constant[:tag]
-      when 8 # String
-        value = java_class.get_string_from_constant_pool(constant[:string_index])
-        MRjvm::debug('Loaded:"' << value << '"')
+      when TagReader::CONSTANT_INTEGER
+        value = Heap::StackVariable.new(Heap::VARIABLE_INT, java_class.get_from_constant_pool(constant[:value_index]))
+      when TagReader::CONSTANT_LONG
+        value = Heap::StackVariable.new(Heap::VARIABLE_LONG, java_class.get_from_constant_pool(constant[:value_index]))
+      when TagReader::CONSTANT_FLOAT
+        value = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, java_class.get_from_constant_pool(constant[:value_index]))
+      when TagReader::CONSTANT_DOUBLE
+        value = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, java_class.get_from_constant_pool(constant[:value_index]))
+      when TagReader::CONSTANT_STRING
+        value = Heap::StackVariable.new(Heap::VARIABLE_STRING, java_class.get_from_constant_pool(constant[:string_index]))
       else
         raise StandardError, '[ERROR] load_constant ' << constant[:tag].to_s
     end
     value
   end
 
+  # -------------------------------------------------------------------------
   def put_field(frame)
     index = frame.method[:attributes][0][:code][frame.pc+1,2].join('').to_i(16)
     object_id = frame.stack[frame.sp - 1]
@@ -371,6 +488,15 @@ class ExecutionCore
     frame.stack[frame.sp] = var_list[index+1]
   end
 
+  def put_static_field(frame)
+    # code here
+  end
+
+  def get_static_field(frame)
+    # code here
+  end
+
+  # -------------------------------------------------------------------------
   def execute_new(frame)
     frame.sp += 1
     byte_code = frame.method[:attributes][0][:code]
@@ -381,6 +507,19 @@ class ExecutionCore
     frame.stack[frame.sp] = frame.java_class.create_object(index, object_heap)
   end
 
+  def execute_new_array(frame)
+    # code here
+  end
+
+  def execute_a_new_array(frame)
+    # code here
+  end
+
+  def execute_new_multi_array(frame)
+    # code here
+  end
+
+  # -------------------------------------------------------------------------
   # TODO Add support for static
   def execute_invoke(frame_stack, static)
     method_index = frame_stack[fp].method[:attributes][0][:code][frame_stack[fp].pc+1, 2].join('').to_i(16)
@@ -389,11 +528,11 @@ class ExecutionCore
 
     class_index = method_constant[:class_index]
     class_constant = frame_stack[fp].java_class.constant_pool[class_index-1]
-    class_name = frame_stack[fp].java_class.get_string_from_constant_pool(class_constant[:name_index])
+    class_name = frame_stack[fp].java_class.get_from_constant_pool(class_constant[:name_index])
 
     method_constant = frame_stack[fp].java_class.constant_pool[name_and_type_index-1]
-    method_name = frame_stack[fp].java_class.get_string_from_constant_pool(method_constant[:name_index])
-    method_descriptor = frame_stack[fp].java_class.get_string_from_constant_pool(method_constant[:descriptor_index])
+    method_name = frame_stack[fp].java_class.get_from_constant_pool(method_constant[:name_index])
+    method_descriptor = frame_stack[fp].java_class.get_from_constant_pool(method_constant[:descriptor_index])
 
     java_class = class_heap.get_class(class_name)
     method_index = java_class.get_method_index(method_name, method_descriptor)
@@ -425,6 +564,15 @@ class ExecutionCore
     frame_stack[fp].sp -= 1 if method_descriptor.include? ')V'
   end
 
+  def execute_dynamic_method(frame_stack)
+    # code here
+  end
+
+  def execute_interface_method(frame_stack)
+    # code here
+  end
+
+  # -------------------------------------------------------------------------
   def get_method_parameters_count(method_descriptor)
     count = 0
     for i in 1..method_descriptor.size
@@ -441,14 +589,15 @@ class ExecutionCore
     count
   end
 
+  # -------------------------------------------------------------------------
   def execute_native_method(frame_stack)
     MRjvm::debug('Invoking native method.')
 
     frame = frame_stack[@fp]
     java_class = frame.java_class
     class_name = java_class.this_class_str
-    method_name = java_class.get_string_from_constant_pool(frame.method[:name_index])
-    method_descriptor = java_class.get_string_from_constant_pool(frame.method[:descriptor_index])
+    method_name = java_class.get_from_constant_pool(frame.method[:name_index])
+    method_descriptor = java_class.get_from_constant_pool(frame.method[:descriptor_index])
 
     MRjvm::debug('Invoking native method: ' << method_name << ', descriptor: ' <<  method_descriptor)
 
@@ -463,6 +612,7 @@ class ExecutionCore
     runtime_environment.run(native_method)
   end
 
+  # -------------------------------------------------------------------------
   # TODO: Only for testing
   def get_native_method(signature)
     if signature.include? 'java/lang/String@valueOf(F)Ljava/lang/String;'
@@ -488,5 +638,21 @@ class ExecutionCore
     elsif signature.include? 'Print(Ljava/lang/String;)V'
       'native_print'
     end
+  end
+
+  def get_locals_string(frame)
+    locals_string = "[LOCALS]\n["
+    frame.locals.each_with_index do |item, index|
+      locals_string << "(#{index} => #{item}), "
+    end
+    locals_string << "]"
+  end
+
+  def get_stack_string(frame)
+    stack_string = "[STACK]\n["
+    frame.stack.each_with_index do |i, index|
+      stack_string << "(#{index} => #{i}), "
+    end
+    stack_string << "]"
   end
 end
