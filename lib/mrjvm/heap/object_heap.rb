@@ -1,19 +1,9 @@
+require_relative 'stack_variable'
+
 module Heap
 
   class Object
     attr_accessor :heap_id, :type, :variables
-  end
-
-  class ObjectPointer
-    attr_accessor :heap_id
-
-    def initialize(heap_id)
-      @heap_id = heap_id
-    end
-
-    def to_s
-      "obj_p:#{heap_id}"
-    end
   end
 
   ##
@@ -34,7 +24,7 @@ module Heap
       object.variables = Array.new(java_class.fields_count, nil)
       @object_map[object.heap_id.to_s.to_sym] = object
       @object_id += 1
-      ObjectPointer.new(@object_id-1)
+      StackVariable.new(VARIABLE_OBJECT, @object_id-1)
     end
 
     def create_string_object (string, class_heap)
@@ -48,21 +38,28 @@ module Heap
     end
 
     def get_object(object_pointer)
-      MRjvm::debug('Reading object from object heap with id:' << object_pointer.heap_id.to_s)
+      MRjvm::debug('Reading object from object heap with id:' << object_pointer.value.to_s)
 
-      @object_map[object_pointer.heap_id.to_s.to_sym]
+      @object_map[object_pointer.value.to_s.to_sym]
     end
 
-    def create_new_array(count)
+    def create_new_array(type, count)
       MRjvm::debug('Creating array for count: ' << count)
 
       object = Object.new
       object.heap_id = @object_id
-      object.type = 'Array'
+      object.type = 'Array@' + type
       object.variables = Array.new(count, nil)
       @object_map[object.heap_id.to_s.to_sym] = object
       @object_id += 1
-      ObjectPointer.new(@object_id-1)
+      StackVariable.new(VARIABLE_ARRAY, @object_id-1)
+    end
+
+    def get_value_from_array(array_pointer, index)
+      MRjvm::debug('Reading value from array with heap_id:' + array_pointer.value.to_s + ' on index: ' + index)
+
+      array_object = @object_map[array_pointer.value.to_s.to_sym]
+      array_object.variables[index]
     end
 
     def to_s

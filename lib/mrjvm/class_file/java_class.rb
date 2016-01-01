@@ -15,18 +15,16 @@ module ClassFile
       @static_variables = []
     end
 
-    # !!!! TODO Maybe create some internal representation???
-
-    def get_string_from_constant_pool(index)
+    def get_from_constant_pool(index)
       @constant_pool[index-1][:bytes]
     end
 
     def this_class_str
-      get_string_from_constant_pool(@constant_pool[this_class-1][:name_index])
+      get_from_constant_pool(@constant_pool[this_class-1][:name_index])
     end
 
     def super_class_str
-      get_string_from_constant_pool(@constant_pool[super_class-1][:name_index])
+      get_from_constant_pool(@constant_pool[super_class-1][:name_index])
     end
 
     def get_super_class
@@ -35,8 +33,8 @@ module ClassFile
 
     def get_method_index(method_name, method_descriptor)
       methods.each_with_index do |method, index|
-        if get_string_from_constant_pool(method[:name_index]) == method_name &&
-           get_string_from_constant_pool(method[:descriptor_index]) == method_descriptor
+        if get_from_constant_pool(method[:name_index]) == method_name &&
+           get_from_constant_pool(method[:descriptor_index]) == method_descriptor
           return index
         end
       end
@@ -44,10 +42,9 @@ module ClassFile
     end
 
     def create_object(index, object_heap)
-      # TODO Checking if is constant CONSTANT_CLASS
       constant = constant_pool[index]
       constant = constant_pool[constant[:class_index]-1]
-      name = get_string_from_constant_pool(constant[:name_index])
+      name = get_from_constant_pool(constant[:name_index])
       java_class = class_heap.get_class(name)
       object_heap.create_object(java_class)
     end
