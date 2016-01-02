@@ -1,3 +1,7 @@
+package test;
+
+import test.Factorial;
+
 public class Test {
 
     public static int stat = 0;
