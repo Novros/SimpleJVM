@@ -61,7 +61,7 @@ class ExecutionCore
           frame.sp += 1
           frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, 2.0)
           frame.pc += 1
-        when  OpCodes::BYTE_DCONST_0
+        when OpCodes::BYTE_DCONST_0
           frame.sp += 1
           frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, 0.0)
           frame.pc += 1
@@ -76,7 +76,7 @@ class ExecutionCore
           frame.pc += 2
         when OpCodes::BYTE_SIPUSH
           frame.sp += 1
-          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_SHORT, byte_code[frame.pc+1,2].join('').to_i(16))
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_SHORT, byte_code[frame.pc+1, 2].join('').to_i(16))
           frame.pc += 3
         when OpCodes::BYTE_LDC
           frame.sp += 1
@@ -84,11 +84,11 @@ class ExecutionCore
           frame.pc += 2
         when OpCodes::BYTE_LDC_W
           frame.sp += 1
-          frame.stack[frame.sp] = load_constant(frame.java_class, byte_code[frame.pc+1,2].join('').to_i(16))
+          frame.stack[frame.sp] = load_constant(frame.java_class, byte_code[frame.pc+1, 2].join('').to_i(16))
           frame.pc += 3
         when OpCodes::BYTE_LDC2_W
           frame.sp += 1
-          frame.stack[frame.sp] = load_constant(frame.java_class, byte_code[frame.pc+1,2].join('').to_i(16))
+          frame.stack[frame.sp] = load_constant(frame.java_class, byte_code[frame.pc+1, 2].join('').to_i(16))
           frame.pc += 3
         when OpCodes::BYTE_ILOAD, OpCodes::BYTE_LLOAD, OpCodes::BYTE_FLOAD, OpCodes::BYTE_DLOAD, OpCodes::BYTE_ALOAD
           frame.sp += 1
@@ -292,22 +292,22 @@ class ExecutionCore
           frame.sp -=1
           frame.pc +=1
         when OpCodes::BYTE_IFEQ
-          (frame.stack[frame.sp] == 0) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] == 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFNE
-          (frame.stack[frame.sp] != 0) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] != 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFLT
-          (frame.stack[frame.sp] < 0) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] < 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFGE
-          (frame.stack[frame.sp] >= 0) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] >= 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFGT
-          (frame.stack[frame.sp] > 0) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] > 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFLE
-          (frame.stack[frame.sp] <= 0) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] <= 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IF_ICMPEQ, OpCodes::BYTE_IF_ACMPEQ
           (frame.stack[frame.sp - 1] == frame.stack[frame.sp]) ?
@@ -341,7 +341,7 @@ class ExecutionCore
           frame.sp -= 2
         # -----------------------------------------------------------------------
         when OpCodes::BYTE__GOTO
-          frame.pc += byte_code[frame.pc+1,2].join('').to_i(16)
+          frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16)
         when OpCodes::BYTE_JSR
           frame.sp += 1
           frame.stack[frame.sp] = frame.pc
@@ -381,9 +381,9 @@ class ExecutionCore
           execute_invoke(frame_stack, false)
           frame.pc += 3
         when OpCodes::BYTE_INVOKESTATIC
-           MRjvm::debug('Invoking static method')
-           execute_invoke(frame_stack, true)
-           frame.pc += 3
+          MRjvm::debug('Invoking static method')
+          execute_invoke(frame_stack, true)
+          frame.pc += 3
         when OpCodes::BYTE_INVOKEINTERFACE
           MRjvm::debug('Invoking interface method')
           execute_interface_method(frame_stack)
@@ -421,18 +421,18 @@ class ExecutionCore
           frame.pc += 4
         # -------------------------------------------------------------------------
         when OpCodes::BYTE_IFNULL
-          (frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFNONNULL
-          (!frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1,2].join('').to_i(16) : frame.pc += 3
+          (!frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
           frame.sp -= 1
         # -------------------------------------------------------------------------
         when OpCodes::BYTE_GOTO_W
-          frame.pc += byte_code[frame.pc+1,4].join('').to_i(16)
+          frame.pc += byte_code[frame.pc+1, 4].join('').to_i(16)
         when OpCodes::BYTE_JSR_W
           frame.sp += 1
           frame.stack[frame.sp] = frame.pc
-          frame.pc += byte_code[frame.pc+1,4].join('').to_i(16)
+          frame.pc += byte_code[frame.pc+1, 4].join('').to_i(16)
         # -------------------------------------------------------------------------
         else
           raise StandardError, byte_code[frame.pc]
@@ -466,7 +466,7 @@ class ExecutionCore
 
   # -------------------------------------------------------------------------
   def put_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
     object_id = frame.stack[frame.sp - 1]
     value = frame.stack[frame.sp]
     var_list = object_heap.get_object(object_id).variables
@@ -478,7 +478,7 @@ class ExecutionCore
   end
 
   def get_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
     object_id = frame.stack[frame.sp]
     var_list = object_heap.get_object(object_id).variables
 
@@ -491,14 +491,14 @@ class ExecutionCore
     value = frame.stack[frame.sp]
     frame.sp -= 1
 
-    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
     frame.java_class.static_variables[index] = value
 
     MRjvm::debug("Putting value into static field of class: #{frame.java_class.this_class_str}, #{index}, #{value}.")
   end
 
   def get_static_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
     value = frame.java_class.static_variables[index]
     frame.sp += 1
     frame.stack[frame.sp] = value
@@ -510,7 +510,7 @@ class ExecutionCore
   def execute_new(frame)
     frame.sp += 1
     byte_code = get_method_byte_code(frame)
-    index = byte_code[frame.pc+1,2].join('').to_i(16)
+    index = byte_code[frame.pc+1, 2].join('').to_i(16)
 
     MRjvm::debug('Executed new on class index: ' << index.to_s << ' in class ' << frame.java_class.this_class_str)
 
@@ -527,7 +527,7 @@ class ExecutionCore
   end
 
   def execute_a_new_array(frame)
-    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
     class_name = frame.java_class.get_from_constant_pool(frame.java_class.constant_pool[index-1][:name_index])
     count = frame.stack[frame.sp]
 
@@ -538,7 +538,7 @@ class ExecutionCore
 
   def execute_new_a_multi_array(frame)
     # TODO Check if works
-    index = get_method_byte_code(frame)[frame.pc+1,2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
     class_name = frame.java_class.get_from_constant_pool(frame.java_class.constant_pool[index-1][:name_index])
     dimensions = get_method_byte_code(frame)[frame.pc+1].to_i(16)
     count = frame.stack[frame.sp-dimensions]
@@ -549,7 +549,7 @@ class ExecutionCore
 
     (1...dimensions).each do |i|
       count = frame.stack[frame.sp-dimensions+i]
-      array.variables[i] = Array.new(count,nil)
+      array.variables[i] = Array.new(count, nil)
     end
     frame.sp -= dimensions
     frame.stack[frame.sp] = array_pointer
@@ -575,24 +575,19 @@ class ExecutionCore
 
     MRjvm::debug('Invoking method: ' << method_name << ', descriptor: ' << method_descriptor)
 
+    parameters_count = get_method_parameters_count(method_descriptor)
+    parameters_count -= 1 if static
     # Prepare frame for invoked method
     if (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_SUPER) != 0
-      frame_stack[fp+1] = Heap::Frame.initialize_with_class_method(java_class.get_super_class, method)
+      frame_stack[fp+1] = Heap::Frame.initialize_with_class_method(java_class.get_super_class, method, parameters_count)
     elsif (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_NATIVE) != 0
       frame_stack[fp+1] = Heap::Frame.initialize_with_class_native_method(java_class, method)
     else
-      frame_stack[fp+1] = Heap::Frame.initialize_with_class_method(java_class, method)
+      frame_stack[fp+1] = Heap::Frame.initialize_with_class_method(java_class, method, parameters_count)
     end
-    parameters_count = get_method_parameters_count(method_descriptor) # + 1 # + 1 for object_ref
     frame_stack[fp+1].sp = frame_stack[fp].sp
-    if static
-      for i in 0...parameters_count do
-        frame_stack[fp+1].locals[i] = frame_stack[fp].stack[frame_stack[fp].sp-parameters_count+1+i]
-      end
-    else
-      for i in 0..parameters_count do
-        frame_stack[fp+1].locals[i] = frame_stack[fp].stack[frame_stack[fp].sp-parameters_count+i]
-      end
+    for i in 0..parameters_count do
+      frame_stack[fp+1].locals[i] = frame_stack[fp].stack[frame_stack[fp].sp-parameters_count+i]
     end
 
     @fp += 1
@@ -601,8 +596,7 @@ class ExecutionCore
 
     frame_stack[fp].sp -= parameters_count
     frame_stack[fp].stack[frame_stack[fp].sp] = return_value # At top should be return value
-    frame_stack[fp].sp -= 1 if method_descriptor.include? ')V'
-    frame_stack[fp].sp += 1 if static
+    frame_stack[fp].sp -= 1 if method_descriptor.include? ')V' # If it is void
   end
 
   def execute_dynamic_method(frame_stack)
@@ -646,7 +640,7 @@ class ExecutionCore
     method_name = java_class.get_from_constant_pool(frame.method[:name_index])
     method_descriptor = java_class.get_from_constant_pool(frame.method[:descriptor_index])
 
-    MRjvm::debug('Invoking native method: ' << method_name << ', descriptor: ' <<  method_descriptor)
+    MRjvm::debug('Invoking native method: ' << method_name << ', descriptor: ' << method_descriptor)
 
     signature = class_name + '@' + method_name + method_descriptor
     native_method = get_native_method(signature)
