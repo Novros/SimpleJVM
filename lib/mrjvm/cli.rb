@@ -35,6 +35,10 @@ module MRjvm
           options[:op_size] = true
         end
 
+        opts.on('-n', '--native', 'Path to used native libs.') do
+          options[:native] = true
+        end
+
         begin
           if ARGV.empty?
             puts opts.banner
@@ -66,6 +70,8 @@ module MRjvm
         jvm.frame_size = ARGV[index].to_i
       when 'op_size'
         jvm.op_size = ARGV[index].to_i
+      when 'native'
+        jvm.native_lib_path = ARGV[index]
       else
     end
   end

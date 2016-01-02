@@ -18,7 +18,7 @@ module MRjvm
   ##
   # Entry point class.
   class MRjvm
-    attr_accessor :op_size, :frame_size
+    attr_accessor :op_size, :frame_size, :native_lib_path
 
     def initialize
       @op_size = 100
@@ -37,6 +37,7 @@ module MRjvm
     # Run file with class Main and function main.
     def run(file)
       class_heap = Heap::ClassHeap.new
+      class_heap.native_lib_path = native_lib_path
       object_heap = Heap::ObjectHeap.new
 
       # Load entry point class.

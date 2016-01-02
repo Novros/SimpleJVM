@@ -1,5 +1,6 @@
 require_relative '../class_file/java_class'
 require_relative '../class_file/reader/class_file_reader'
+require 'fiddle'
 
 module Heap
   class ClassLoaderError < StandardError
@@ -8,8 +9,11 @@ module Heap
   ##
   # This heap contains loaded classes.
   class ClassHeap
+    attr_accessor :native_lib_path
+
     def initialize
       @class_map = {}
+      @native_map = {}
     end
 
     def add_class(java_class)
@@ -94,10 +98,33 @@ module Heap
       '' + File.expand_path(File.dirname(__FILE__)) + "/../../std/class/#{class_name}"
     end
 
+    def native_lib_path=(path)
+      @native_lib_path = File.expand_path(path)
+    end
+
+    def load_native_library(file_name, java_class)
+      MRjvm.debug("Reading native library with name: #{file_name} for class: #{java_class.this_class_str}")
+
+      file_path = "#{@native_lib_path}/lib#{file_name}.so"
+      fail ClassLoaderError, 'Library not exist: ' << file_path unless File.file? file_path
+      library = Fiddle.dlopen(file_path)
+      @native_map[file_name.to_sym] = library
+    end
+
+    def get_native_library(class_name)
+      MRjvm.debug("Loading native library for class: #{class_name}")
+
+      @native_map[class_name.to_s.to_sym]
+    end
+
     def to_s
       string = "Class heap\n"
       @class_map.each do |item|
         string << "[DEBUG] \t#{item[0]} => #{item[1].this_class_str}\n"
+      end
+      string << "[DEBUG] Native libs\n"
+      @native_map.each do |item|
+        string << "[DEBUG] \t#{item[0]} => #{item[1]}\n"
       end
       string << '[DEBUG]'
       string
