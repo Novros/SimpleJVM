@@ -78,7 +78,7 @@ module Heap
       java_class.fields.each do |field|
         count += 1 if (field[:access_flags].to_i(16) & AccessFlagsReader::ACC_STATIC) != 0
       end
-      java_class.static_variables = Array.new(count,nil)
+      java_class.static_variables = Array.new(count, nil)
     end
   end
 end
