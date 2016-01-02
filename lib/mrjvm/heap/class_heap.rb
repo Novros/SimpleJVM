@@ -2,26 +2,24 @@ require_relative '../class_file/java_class'
 require_relative '../class_file/reader/class_file_reader'
 
 module Heap
-
   class ClassLoaderError < StandardError
   end
 
   ##
   # This heap contains loaded classes.
   class ClassHeap
-
     def initialize
       @class_map = {}
     end
 
     def add_class(java_class)
-      MRjvm::debug('Adding class to class heap. ' << java_class.this_class_str)
+      MRjvm.debug('Adding class to class heap. ' << java_class.this_class_str)
 
       @class_map[java_class.this_class_str.to_sym] = java_class
     end
 
     def get_class(class_name)
-      MRjvm::debug('Getting class from heap. ' << class_name)
+      MRjvm.debug('Getting class from heap. ' << class_name)
 
       java_class = @class_map[class_name.to_sym]
       if java_class.nil?
@@ -32,7 +30,7 @@ module Heap
     end
 
     def load_class(class_name)
-      MRjvm::debug('Loading class: ' << class_name)
+      MRjvm.debug('Loading class: ' << class_name)
 
       class_file_name = class_name + '.class'
 
@@ -41,7 +39,7 @@ module Heap
       # If not exists in standard library, load from project
       path = get_relative_path(class_file_name) unless File.file? path
       # If class does not exist throw error.
-      raise ClassLoaderError, "Could not load class #{class_file_name}" unless File.file? path
+      fail ClassLoaderError, "Could not load class #{class_file_name}" unless File.file? path
 
       reader = ClassFileReader.new(path)
       reader.parse_content
@@ -50,13 +48,13 @@ module Heap
       initialize_class_variables(java_class)
       add_class(java_class)
 
-      MRjvm::debug('' << java_class.to_s)
+      MRjvm.debug('' << java_class.to_s)
 
       java_class
     end
 
     def load_class_from_file(file)
-      MRjvm::debug('Loading class from file: ' << file)
+      MRjvm.debug('Loading class from file: ' << file)
 
       reader = ClassFileReader.new(file)
       reader.parse_content
@@ -67,13 +65,13 @@ module Heap
 
       save_project_path(file, java_class)
 
-      MRjvm::debug('' << java_class.to_s)
+      MRjvm.debug('' << java_class.to_s)
 
       java_class
     end
 
     def save_project_path(file, java_class)
-      @project_path = class_absolute_path = File.expand_path(File.dirname(file))
+      @project_path = File.expand_path(File.dirname(file))
       count = java_class.this_class_str.count('/')
       count.times do
         @project_path << '/..'

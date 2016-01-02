@@ -1,5 +1,4 @@
 module Heap
-
   VARIABLE_SHORT = 0
   VARIABLE_INT = 1
   VARIABLE_LONG = 2
@@ -11,6 +10,7 @@ module Heap
   VARIABLE_ARRAY = 8
   VARIABLE_BYTE = 9
 
+  # This class is stored in operand stack
   class StackVariable
     attr_accessor :type, :value
 
