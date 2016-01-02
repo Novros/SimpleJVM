@@ -676,8 +676,10 @@ class ExecutionCore
       'string_builder_append_j'
     elsif signature.include? 'java/lang/StringBuilder@toString()Ljava/lang/String;'
       'string_builder_to_string_string'
-    elsif signature.include? 'Print(Ljava/lang/String;)V'
+    elsif signature.include? 'java/io/PrintStream@println(Ljava/lang/String;)V'
       'native_print'
+    else
+      fail StandardError, signature
     end
   end
 
