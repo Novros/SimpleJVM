@@ -5,6 +5,7 @@ require 'mrjvm/heap/object_heap'
 require 'mrjvm/heap/frame'
 require 'mrjvm/execution_core'
 
+# MRjvm is main module of our JVM.
 module MRjvm
   DEBUG_STRING = '[DEBUG] '
 
@@ -17,7 +18,6 @@ module MRjvm
   ##
   # Entry point class.
   class MRjvm
-
     attr_accessor :op_size, :frame_size
 
     def initialize
@@ -51,7 +51,7 @@ module MRjvm
       Heap::Frame.op_stack = Array.new(@op_size, nil)
 
       method_index = java_class.get_method_index('main', '()V', true)
-      raise StandardError, 'Class not contains static method main!' if method_index == -1
+      fail StandardError, 'Class not contains static method main!' if method_index == -1
 
       frame_stack[0] = Heap::Frame.initialize_with_class_method(java_class, java_class.methods[method_index], 0) # No parameters
       start_frame = frame_stack[0]

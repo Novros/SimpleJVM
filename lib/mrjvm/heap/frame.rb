@@ -1,4 +1,5 @@
 module Heap
+  # This class represents frame for functions calling.
   class Frame
     # pc = program_counter, sp = stack_pointer
     attr_accessor :java_class, :method, :pc, :sp, :stack, :locals
@@ -39,6 +40,5 @@ module Heap
     def self::op_stack=(op_stack)
       @@op_stack = op_stack
     end
-
   end
 end
