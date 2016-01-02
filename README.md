@@ -6,12 +6,13 @@
     - Implement java/lang/Object
     - Implement java/lang/String
     - Implement java/lang/StringBuilder
-- Add native method support
+    - Rewrite get_native_method
 - Add garbage collection
 - Add exception support
 - Add cli support (in/out)
 - Add fio support
 - Add thread support
+- Add jar file support
 
 # MRjvm
 
