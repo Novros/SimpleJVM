@@ -14,12 +14,12 @@ module Heap
       @locals = nil
     end
 
-    def self::initialize_with_class_method(java_class, method)
+    def self::initialize_with_class_method(java_class, method, params_count)
       frame = Frame.new
       frame.java_class = java_class
       frame.method = method
       frame.stack = @@op_stack
-      frame.locals = Array.new(method[:attributes][0][:max_locals], nil)
+      frame.locals = Array.new(method[:attributes][0][:max_locals] + params_count, nil)
       frame
     end
 
