@@ -8,6 +8,10 @@ require_relative 'native/native_runner'
 class ExecutionCore
   attr_accessor :class_heap, :object_heap, :fp
 
+  def initialize
+    @stack_var_zero = Heap::StackVariable.new(Heap::VARIABLE_INT, 0)
+  end
+
   def execute(frame_stack)
     frame = frame_stack[fp]
 
@@ -220,7 +224,8 @@ class ExecutionCore
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_IINC
-          frame.locals[byte_code[frame.pc+1].to_i(16)] += byte_code[frame.pc+2].to_i(16)
+          bytes = byte_code[frame.pc+2]
+          frame.locals[byte_code[frame.pc+1].to_i(16)].value += [bytes.scan(/[0-9a-f]{2}/i).reverse.join].pack('H*').unpack('c')[0]
           frame.pc += 3
         # -------------------------- Conversion operations ----------------------------
         when OpCodes::BYTE_I2L
@@ -288,68 +293,70 @@ class ExecutionCore
           frame.pc += 1
         # -------------------------- Control flow ----------------------------
         when OpCodes::BYTE_LCMP, OpCodes::BYTE_FCMPL, OpCodes::BYTE_FCMPG, OpCodes::BYTE_DCMPL, OpCodes::BYTE_DCMPG
-          frame.stack[frame.sp-1] = frame.stack[frame.sp] <=> frame.stack[frame.sp-1]
+          frame.stack[frame.sp-1] = Heap::StackVariable.new(Heap::VARIABLE_INT, frame.stack[frame.sp] <=> frame.stack[frame.sp-1])
           frame.sp -=1
           frame.pc +=1
         when OpCodes::BYTE_IFEQ
-          (frame.stack[frame.sp] == 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] == @stack_var_zero) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFNE
-          (frame.stack[frame.sp] != 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] != @stack_var_zero) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFLT
-          (frame.stack[frame.sp] < 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] < @stack_var_zero) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFGE
-          (frame.stack[frame.sp] >= 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] >= @stack_var_zero) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFGT
-          (frame.stack[frame.sp] > 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] > @stack_var_zero) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFLE
-          (frame.stack[frame.sp] <= 0) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[frame.sp] <= @stack_var_zero) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IF_ICMPEQ, OpCodes::BYTE_IF_ACMPEQ
           (frame.stack[frame.sp - 1] == frame.stack[frame.sp]) ?
-              frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) :
+              frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) :
               frame.pc += 3
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPNE, OpCodes::BYTE_IF_ACMPNE
           (frame.stack[frame.sp - 1] != frame.stack[frame.sp]) ?
-              frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) :
+              frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) :
               frame.pc += 3
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPLT
           (frame.stack[frame.sp - 1] < frame.stack[frame.sp]) ?
-              frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) :
+              frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) :
               frame.pc += 3
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPGE
           (frame.stack[frame.sp - 1] >= frame.stack[frame.sp]) ?
-              frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) :
+              frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) :
               frame.pc += 3
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPGT
           (frame.stack[frame.sp - 1] > frame.stack[frame.sp]) ?
-              frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) :
+              frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) :
               frame.pc += 3
           frame.sp -= 2
         when OpCodes::BYTE_IF_ICMPLE
           (frame.stack[frame.sp - 1] <= frame.stack[frame.sp]) ?
-              frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) :
+              frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) :
               frame.pc += 3
           frame.sp -= 2
         # -----------------------------------------------------------------------
         when OpCodes::BYTE__GOTO
-          frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16)
+          frame.pc += get_signed_branch_offset(byte_code[frame.pc+1, 2].join)
         when OpCodes::BYTE_JSR
           frame.sp += 1
           frame.stack[frame.sp] = frame.pc
-          frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16)
+          frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join)
         when OpCodes::BYTE_RET
           frame.pc = frame.locals[byte_code[frame.pc+1].to_i(16)]
-        # when OpCodes::BYTE_TABLESWITCH
-        # when OpCodes::BYTE_LOOKUPSWITCH
+        when OpCodes::BYTE_TABLESWITCH
+          frame.pc = execute_table_switch(frame)
+        when OpCodes::BYTE_LOOKUPSWITCH
+          frame.pc = execute_table_lookup_switch(frame)
         # -------------------------- Return from methods -------------------------
         when OpCodes::BYTE_IRETURN, OpCodes::BYTE_LRETURN, OpCodes::BYTE_FRETURN, OpCodes::BYTE_DRETURN, OpCodes::BYTE_ARETURN
           MRjvm.debug('Return from function.')
@@ -405,7 +412,6 @@ class ExecutionCore
         when OpCodes::BYTE_ARRAYLENGTH
           frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, object_heap.get_object(frame.stack[frame.sp]).values.length)
           frame.pc +=1
-
         # ------------------------------- Exceptions -------------------------------
         # when OpCodes::BYTE_ATHROW
         # -------------------------------------------------------------------------
@@ -421,24 +427,34 @@ class ExecutionCore
           frame.pc += 4
         # -------------------------------------------------------------------------
         when OpCodes::BYTE_IFNULL
-          (frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
+          (frame.stack[sp].nil?) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFNONNULL
-          (!frame.stack[sp].nil?) ? frame.pc += byte_code[frame.pc+1, 2].join('').to_i(16) : frame.pc += 3
+          (!frame.stack[sp].nil?) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         # -------------------------------------------------------------------------
         when OpCodes::BYTE_GOTO_W
-          frame.pc += byte_code[frame.pc+1, 4].join('').to_i(16)
+          frame.pc += get_signed_int_branch_offset(byte_code[frame.pc+1, 4].join)
         when OpCodes::BYTE_JSR_W
           frame.sp += 1
           frame.stack[frame.sp] = frame.pc
-          frame.pc += byte_code[frame.pc+1, 4].join('').to_i(16)
+          frame.pc += get_signed_int_branch_offset(byte_code[frame.pc+1, 4].join)
         # -------------------------------------------------------------------------
         else
           raise StandardError, byte_code[frame.pc]
       end
     end
     0
+  end
+
+
+  # -------------------------------------------------------------------------
+  def get_signed_int_branch_offset(bytes)
+    [bytes.scan(/[0-9a-f]{2}/i).reverse.join].pack('H*').unpack('l')[0]
+  end
+
+  def get_signed_branch_offset(bytes)
+    [bytes.scan(/[0-9a-f]{2}/i).reverse.join].pack('H*').unpack('s')[0]
   end
 
   # -------------------------------------------------------------------------
@@ -453,11 +469,11 @@ class ExecutionCore
       when TagReader::CONSTANT_LONG
         value = Heap::StackVariable.new(Heap::VARIABLE_LONG, java_class.get_from_constant_pool(constant[:value_index]))
       when TagReader::CONSTANT_FLOAT
-        value = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, java_class.get_from_constant_pool(constant[:value_index]))
+        value = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, java_class.get_from_constant_pool(constant[:value]))
       when TagReader::CONSTANT_DOUBLE
-        value = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, java_class.get_from_constant_pool(constant[:value_index]))
+        value = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, java_class.get_from_constant_pool(constant[:value]))
       when TagReader::CONSTANT_STRING
-        value = Heap::StackVariable.new(Heap::VARIABLE_STRING, java_class.get_from_constant_pool(constant[:string_index]))
+        value = object_heap.create_string_object(java_class.get_from_constant_pool(constant[:string_index]), class_heap)
       else
         raise StandardError, '[ERROR] load_constant ' << constant[:tag].to_s
     end
@@ -466,39 +482,39 @@ class ExecutionCore
 
   # -------------------------------------------------------------------------
   def put_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
     object_id = frame.stack[frame.sp - 1]
     value = frame.stack[frame.sp]
-    var_list = object_heap.get_object(object_id).variables
 
     MRjvm.debug("Putting value into field of object: #{object_id} on index: #{index} with value: #{value}.")
 
-    var_list[index+1] = value
+    var_list = object_heap.get_object(object_id).variables
+    var_list[index] = value
     frame.sp -= 2
   end
 
   def get_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
     object_id = frame.stack[frame.sp]
-    var_list = object_heap.get_object(object_id).variables
 
     MRjvm.debug("Reading field from object: #{object_id} on index: #{index}.")
 
-    frame.stack[frame.sp] = var_list[index+1]
+    var_list = object_heap.get_object(object_id).variables
+    frame.stack[frame.sp] = var_list[index]
   end
 
   def put_static_field(frame)
     value = frame.stack[frame.sp]
     frame.sp -= 1
 
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
     frame.java_class.static_variables[index] = value
 
     MRjvm.debug("Putting value into static field of class: #{frame.java_class.this_class_str}, #{index}, #{value}.")
   end
 
   def get_static_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
     value = frame.java_class.static_variables[index]
     frame.sp += 1
     frame.stack[frame.sp] = value
@@ -553,6 +569,53 @@ class ExecutionCore
     end
     frame.sp -= dimensions
     frame.stack[frame.sp] = array_pointer
+  end
+
+  # -------------------------------------------------------------------------
+  def execute_table_switch(frame)
+    MRjvm.debug('Executing table switch.')
+
+    index = frame.stack[frame.sp].value
+    frame.sp -= 1
+    byte_code = get_method_byte_code(frame)
+    pc_offset = get_table_switch_padding_offset(frame)
+    default_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
+    pc_offset += 4
+    min_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
+    pc_offset += 4
+    max_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
+    pc_offset += 4
+    address_array = {}
+    (min_value..max_value).each do |i|
+      address_array[i.to_s.to_sym] = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
+      pc_offset += 4
+    end
+    address_array[index.to_s.to_sym].nil? ? default_value : address_array[index.to_s.to_sym]
+  end
+
+  def get_table_switch_padding_offset(frame)
+    4 - ((frame.pc) % 4)
+  end
+
+  def execute_table_lookup_switch(frame)
+    MRjvm.debug('Executing table lookup switch.')
+
+    index = frame.stack[frame.sp].value
+    frame.sp -= 1
+    byte_code = get_method_byte_code(frame)
+    pc_offset = get_table_switch_padding_offset(frame)
+    default_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
+    pc_offset += 4
+    count = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
+    pc_offset += 4
+    address_array = {}
+    (0...count).each do |i|
+      index_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
+      pc_offset += 4
+      address_array[index_value.to_s.to_sym] = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
+      pc_offset += 4
+    end
+    address_array[index.to_s.to_sym].nil? ? default_value : address_array[index.to_s.to_sym]
   end
 
   # -------------------------------------------------------------------------
@@ -683,6 +746,8 @@ class ExecutionCore
       'string_builder_append_f'
     elsif signature.include? 'java/lang/StringBuilder@append(J)Ljava/lang/StringBuilder;'
       'string_builder_append_j'
+    elsif signature.include? 'java/lang/StringBuilder@append(D)Ljava/lang/StringBuilder;'
+      'string_builder_append_d'
     elsif signature.include? 'java/lang/StringBuilder@toString()Ljava/lang/String;'
       'string_builder_to_string_string'
     elsif signature.include? 'java/io/PrintStream@println(Ljava/lang/String;)V'

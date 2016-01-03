@@ -42,8 +42,8 @@ module MRjvm
 
       # Load entry point class.
       java_class = class_heap.load_class_from_file(file)
-      # Load object class.
-      class_heap.load_class('java/lang/Object')
+      # Load std classes in java/lang/.
+      load_std_classes(class_heap)
 
       frame_stack = []
       @frame_size.times do
@@ -63,6 +63,13 @@ module MRjvm
       executing_core.object_heap = object_heap
       executing_core.fp = 0
       executing_core.execute(frame_stack)
+    end
+
+    def load_std_classes(class_heap)
+      class_heap.load_class('java/lang/Object')
+      class_heap.load_class('java/lang/String')
+      class_heap.load_class('java/lang/StringBuilder')
+      class_heap.load_class('java/lang/System')
     end
   end
 end
