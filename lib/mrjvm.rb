@@ -37,7 +37,7 @@ module MRjvm
     # Run file with class Main and function main.
     def run(file)
       class_heap = Heap::ClassHeap.new
-      class_heap.native_lib_path = native_lib_path
+      class_heap.native_lib_path = native_lib_path unless native_lib_path.nil?
       object_heap = Heap::ObjectHeap.new
 
       # Load entry point class.

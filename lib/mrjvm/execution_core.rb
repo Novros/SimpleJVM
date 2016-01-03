@@ -354,9 +354,9 @@ class ExecutionCore
         when OpCodes::BYTE_RET
           frame.pc = frame.locals[byte_code[frame.pc+1].to_i(16)]
         when OpCodes::BYTE_TABLESWITCH
-          frame.pc = execute_table_switch(frame)
+          frame.pc = execute_table_switch(frame) + 1
         when OpCodes::BYTE_LOOKUPSWITCH
-          frame.pc = execute_table_lookup_switch(frame)
+          frame.pc = execute_table_lookup_switch(frame) + 1
         # -------------------------- Return from methods -------------------------
         when OpCodes::BYTE_IRETURN, OpCodes::BYTE_LRETURN, OpCodes::BYTE_FRETURN, OpCodes::BYTE_DRETURN, OpCodes::BYTE_ARETURN
           MRjvm.debug('Return from function.')
@@ -416,13 +416,20 @@ class ExecutionCore
         # when OpCodes::BYTE_ATHROW
         # -------------------------------------------------------------------------
         # when OpCodes::BYTE_CHECKCAST
-        # when OpCodes::BYTE_INSTANCEOF
+        when OpCodes::BYTE_INSTANCEOF
+          index = byte_code[frame.pc + 1, 2].join.to_i(16)
+          object_pointer = frame.stack[frame.sp]
+          object = object_heap.get_object(object_pointer);
+          class_name = frame.java_class.get_from_constant_pool(frame.java_class.constant_pool[index-1][:name_index])
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, object.type.this_class_str == class_name)
+          frame.pc += 3
         # -------------------------- Thread synchronization -----------------------
         # when OpCodes::BYTE_MONITORENTER
         # when OpCodes::BYTE_MONITOREXIT
         # -------------------------------------------------------------------------
         # when OpCodes::BYTE_WIDE
         when OpCodes::BYTE_MULTIANEWARRAY
+          # TODO Check if works.
           execute_new_a_multi_array(frame)
           frame.pc += 4
         # -------------------------------------------------------------------------
@@ -467,11 +474,11 @@ class ExecutionCore
       when TagReader::CONSTANT_INTEGER
         value = Heap::StackVariable.new(Heap::VARIABLE_INT, java_class.get_from_constant_pool(constant[:value_index]))
       when TagReader::CONSTANT_LONG
-        value = Heap::StackVariable.new(Heap::VARIABLE_LONG, java_class.get_from_constant_pool(constant[:value_index]))
+        value = Heap::StackVariable.new(Heap::VARIABLE_LONG, constant[:value])
       when TagReader::CONSTANT_FLOAT
-        value = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, java_class.get_from_constant_pool(constant[:value]))
+        value = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, constant[:value])
       when TagReader::CONSTANT_DOUBLE
-        value = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, java_class.get_from_constant_pool(constant[:value]))
+        value = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, constant[:value])
       when TagReader::CONSTANT_STRING
         value = object_heap.create_string_object(java_class.get_from_constant_pool(constant[:string_index]), class_heap)
       else
@@ -735,7 +742,7 @@ class ExecutionCore
     elsif signature.include? 'java/lang/StringBuilder@append(Ljava/lang/String;)Ljava/lang/StringBuilder;'
       'string_builder_append_s'
     elsif signature.include? 'java/lang/StringBuilder@append(I)Ljava/lang/StringBuilder;'
-      'string_builder_append_i'
+      'string_builder_append_number'
     elsif signature.include? 'java/lang/StringBuilder@append(C)Ljava/lang/StringBuilder;'
       'string_builder_append_c'
     elsif signature.include? 'java/lang/StringBuilder@append(Z)Ljava/lang/StringBuilder;'
@@ -743,11 +750,11 @@ class ExecutionCore
     elsif signature.include? 'java/lang/StringBuilder@append(Ljava/lang/Object;)Ljava/lang/StringBuilder;'
       'string_builder_append_o'
     elsif signature.include? 'java/lang/StringBuilder@append(F)Ljava/lang/StringBuilder;'
-      'string_builder_append_f'
+      'string_builder_append_number'
     elsif signature.include? 'java/lang/StringBuilder@append(J)Ljava/lang/StringBuilder;'
-      'string_builder_append_j'
+      'string_builder_append_number'
     elsif signature.include? 'java/lang/StringBuilder@append(D)Ljava/lang/StringBuilder;'
-      'string_builder_append_d'
+      'string_builder_append_number'
     elsif signature.include? 'java/lang/StringBuilder@toString()Ljava/lang/String;'
       'string_builder_to_string_string'
     elsif signature.include? 'java/io/PrintStream@println(Ljava/lang/String;)V'
