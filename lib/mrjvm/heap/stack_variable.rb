@@ -14,11 +14,33 @@ module Heap
   class StackVariable
     attr_accessor :type, :value
 
-    include Comparable
-
     def initialize(type, value)
       @type = type
       @value = value
+    end
+
+    def <(other)
+      value < other.value
+    end
+
+    def <=(other)
+      value <= other.value
+    end
+
+    def >(other)
+      value > other.value
+    end
+
+    def >=(other)
+      value >= other.value
+    end
+
+    def ==(other)
+     value == other.value
+    end
+
+    def !=(other)
+     value != other.value
     end
 
     def <=>(other)

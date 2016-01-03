@@ -42,13 +42,14 @@ module Native
     end
 
     def native_print
-      stack_variable = frame.stack[frame.sp]
-      if stack_variable.type == Heap::VARIABLE_OBJECT
-        object = object_heap.get_object(stack_variable)
-        puts object.variables[0]
-      else
-        puts stack_variable.value
+      string_pointer = frame.stack[frame.sp]
+      string = object_heap.get_object(string_pointer)
+      char_array = object_heap.get_object(string.variables[3])
+      text = ''
+      char_array.variables.each do |char|
+        text << char.value.chr
       end
+      puts text
       Heap::StackVariable.new(Heap::VARIABLE_INT, 0)
     end
 
@@ -59,27 +60,48 @@ module Native
     end
 
     def string_builder_append_i
-      object_pointer = frame.stack[frame.sp - 1]
-      value = frame.stack[frame.sp]
-      object = object_heap.get_object(object_pointer)
-      object.variables[0] = '' if object.variables[0].nil?
-      object.variables[0] = object.variables[0] + value.value.to_s
-      Heap::StackVariable.new(Heap::VARIABLE_OBJECT, object.heap_id)
+      string_builder_pointer = frame.stack[frame.sp - 1]
+      string_builder = object_heap.get_object(string_builder_pointer)
+      string_builder.variables[0] = object_heap.create_string_object('', class_heap) if string_builder.variables[0].nil?
+      string_builder_string = object_heap.get_object(string_builder.variables[0])
+      char_array = object_heap.get_object(string_builder_string.variables[3]).variables
+
+      value = frame.stack[frame.sp].value
+      value.to_s.each_char do |char|
+        char_array << Heap::StackVariable.new(Heap::VARIABLE_CHAR, char.ord)
+      end
+
+      string_builder_pointer
     end
 
     def string_builder_append_s
-      object_pointer = frame.stack[frame.sp - 1]
-      value = frame.stack[frame.sp]
-      object = object_heap.get_object(object_pointer)
-      object.variables[0] = '' if object.variables[0].nil?
-      object.variables[0] = object.variables[0] + value.value.to_s
-      Heap::StackVariable.new(Heap::VARIABLE_OBJECT, object.heap_id)
+      string_builder_pointer = frame.stack[frame.sp - 1]
+      string_builder = object_heap.get_object(string_builder_pointer)
+      string_builder.variables[0] = object_heap.create_string_object('', class_heap) if string_builder.variables[0].nil?
+      string_builder_string = object_heap.get_object(string_builder.variables[0])
+      char_array = object_heap.get_object(string_builder_string.variables[3]).variables
+
+      string_pointer = frame.stack[frame.sp]
+      string_object = object_heap.get_object(string_pointer)
+      string_char_array = object_heap.get_object(string_object.variables[3]).variables
+
+      string_char_array.each do |char|
+        char_array << char
+      end
+
+      string_builder_pointer
+    end
+
+    def string_builder_append_d
+      string_builder_append_i
     end
 
     def string_builder_to_string_string
-      object_pointer = frame.stack[frame.sp]
-      object = object_heap.get_object(object_pointer)
-      object_heap.create_string_object(object.variables[0], class_heap)
+      string_builder_pointer = frame.stack[frame.sp]
+      string_builder = object_heap.get_object(string_builder_pointer)
+      string_builder.variables[0] = object_heap.create_string_object('', class_heap) if string_builder.variables[0].nil?
+      string_builder_string = object_heap.get_object(string_builder.variables[0])
+      Heap::StackVariable.new(Heap::VARIABLE_STRING, string_builder_string.heap_id)
     end
 
     def get_method_parameters_count(method_descriptor)

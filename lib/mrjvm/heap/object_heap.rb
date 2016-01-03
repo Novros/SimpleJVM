@@ -26,13 +26,37 @@ module Heap
       StackVariable.new(VARIABLE_OBJECT, @object_id - 1)
     end
 
-    def create_string_object(string, class_heap)
-      MRjvm.debug('Creating string object for string: ' << string)
+    def create_string_object(text, class_heap)
+      MRjvm.debug('Creating string object for string: ' << text)
 
       java_class = class_heap.get_class('java/lang/String')
       object_pointer = create_object(java_class)
       object = get_object(object_pointer)
-      object.variables[0] = string
+
+      # text, text.value, get_object(text)
+      if text.is_a? StackVariable
+        if text.type == 8
+          string = ''
+          string_array = get_object(text).variables
+          string_array.each do |char|
+            string << char.chr
+          end
+        else
+          string = text.value.to_s
+        end
+      else
+        string = text.to_s
+      end
+      array_pointer = create_new_array(0, StackVariable.new(VARIABLE_INT, string.size))
+      array = get_object(array_pointer)
+      index = 0
+      string.each_char do |char|
+        array.variables[index] = StackVariable.new(VARIABLE_CHAR, char.ord)
+        index += 1
+      end
+      object.variables[3] = array_pointer
+      object.variables[1] = StackVariable.new(VARIABLE_INT, 0)
+      object.variables[2] = StackVariable.new(VARIABLE_INT, string.size)
       object_pointer
     end
 
@@ -67,7 +91,11 @@ module Heap
         if item[1].type.is_a? String
           string << "[DEBUG] \t#{item[0]} => #{item[1].type}\n"
         else
-          string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str}\n"
+          if item[1].type.this_class_str.include? 'String'
+            string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str} : #{item[1].variables[3]}\n"
+          else
+            string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str}\n"
+          end
         end
       end
       string << '[DEBUG]'

@@ -21,6 +21,12 @@ public class Test {
 
         Factorial factorial = new Factorial();
         factorial.entry();
+
+        int de = 0;
+        for(int i = 0; i < 150; i++) {
+            de++;
+        }
+        System.out.println("" + de);
     }
 
     public static void testEntry(String text) {
