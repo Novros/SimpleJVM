@@ -30,6 +30,12 @@ public class BigExample {
         result = simpleLookupSwitch(1);
         System.out.println("simpleLookupSwitch(1)=" + result);
 
+        long longa = 123456789;
+        long longb = 987654321;
+        System.out.println("longa:" + longa);
+        System.out.println("longa + longb=" + (longa + longb));
+
+        // TODO Not working.
         //result = simpleSwitch("a");
         //System.out.println("simpleSwitch(\"a\")" + result);
 
@@ -46,12 +52,12 @@ public class BigExample {
         }
     }
 
-    public int greaterThan(float floatOne, float floatTwo) {
-       int result;
+    public float greaterThan(float floatOne, float floatTwo) {
+       float result;
        if (floatOne > floatTwo) {
-           result = 1;
+           result = floatOne;
        } else {
-           result = 2;
+           result = floatTwo;
        }
        return result;
     }

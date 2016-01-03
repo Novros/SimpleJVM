@@ -14,6 +14,7 @@ module Heap
     def initialize
       @class_map = {}
       @native_map = {}
+      @native_lib_path = ''
     end
 
     def add_class(java_class)

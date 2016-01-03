@@ -33,9 +33,30 @@ public class String {
         return h;
     }
 
+    public boolean equals(String anObject) {
+        if (this == anObject) {
+            return true;
+        }
+        if (anObject instanceof String) {
+            String anotherString = anObject;
+            int n = count;
+            if (n == anotherString.count) {
+                char v1[] = value;
+                char v2[] = anotherString.value;
+                int i = 0;
+                int j = 0;
+                while (n-- != 0) {
+                    if (v1[i++] != v2[j++])
+                        return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
 
-	public String toString()
-	{
+
+	public String toString() {
 		return this;
 	}
 }

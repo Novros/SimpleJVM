@@ -59,7 +59,7 @@ module Native
       Heap::StackVariable.new(Heap::VARIABLE_INT, 0)
     end
 
-    def string_builder_append_i
+    def string_builder_append_number
       string_builder_pointer = frame.stack[frame.sp - 1]
       string_builder = object_heap.get_object(string_builder_pointer)
       string_builder.variables[0] = object_heap.create_string_object('', class_heap) if string_builder.variables[0].nil?
@@ -90,10 +90,6 @@ module Native
       end
 
       string_builder_pointer
-    end
-
-    def string_builder_append_d
-      string_builder_append_i
     end
 
     def string_builder_to_string_string
