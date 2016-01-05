@@ -1,4 +1,6 @@
 require_relative 'stack_variable'
+require_relative '../synchronization/synchronized_hash'
+require_relative '../synchronization/synchronized_array'
 
 module Heap
   # This class is stored on object heap.
@@ -10,7 +12,7 @@ module Heap
   # This heap is for created objects.
   class ObjectHeap
     def initialize
-      @object_map = {}
+      @object_map = SynchronizedHash.new
       @object_id = 1
     end
 
@@ -20,7 +22,7 @@ module Heap
       object = Object.new
       object.heap_id = @object_id
       object.type = java_class
-      object.variables = Array.new(java_class.fields_count, nil)
+      object.variables = SynchronizedArray.new(java_class.fields_count, nil)
       @object_map[object.heap_id.to_s.to_sym] = object
       @object_id += 1
       StackVariable.new(VARIABLE_OBJECT, @object_id - 1)
@@ -100,6 +102,17 @@ module Heap
       end
       string << '[DEBUG]'
       string
+    end
+
+    # Iterate all objects in object heap
+    def each(&block)
+      @object_map.each(&block);
+    end
+
+    # Remove object from heap by object instance and heap id, withou synchronization
+    def remove_object(object)
+      @object_map.delete(object.heap_id.to_s.to_sym, false)
+      MRjvm.debug('Removing object from object heap with id: ' << object.heap_id.to_s << '; heap size: ' << @object_map.size.to_s)
     end
   end
 end

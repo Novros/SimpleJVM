@@ -10,6 +10,8 @@ class ExecutionCore
 
   def initialize
     @stack_var_zero = Heap::StackVariable.new(Heap::VARIABLE_INT, 0)
+    @gc = GarbageCollector.new
+    # Start garbage collector
   end
 
   def execute(frame_stack)
@@ -26,6 +28,7 @@ class ExecutionCore
 
     byte_code = get_method_byte_code(frame)
     while true
+      sleep 0.02
       MRjvm.debug('----------------------------------------------------------------')
       MRjvm.debug('' << fp.to_s << ':' << frame.pc.to_s << ' bytecode ' << byte_code[frame.pc])
       MRjvm.debug('[STACK] sp: ' << frame.sp.to_s)
@@ -450,6 +453,9 @@ class ExecutionCore
         else
           raise StandardError, byte_code[frame.pc]
       end
+
+
+      #@gc.run(object_heap, frame_stack, fp, '')
     end
     0
   end
