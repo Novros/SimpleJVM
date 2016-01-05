@@ -1,3 +1,5 @@
+require_relative '../synchronization/synchronized_array'
+
 module Heap
   # This class represents frame for functions calling.
   class Frame
@@ -20,7 +22,7 @@ module Heap
       frame.java_class = java_class
       frame.method = method
       frame.stack = @@op_stack
-      frame.locals = Array.new(method[:attributes][0][:max_locals] + params_count, nil)
+      frame.locals = SynchronizedArray.new(method[:attributes][0][:max_locals] + params_count, nil)
       frame
     end
 

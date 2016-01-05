@@ -94,5 +94,10 @@ module Heap
     def to_s
       "{type#{type}:#{value}}"
     end
+
+    # check if object variable refers to object
+    def object?
+      @type == VARIABLE_OBJECT || @type == VARIABLE_ARRAY || @type == VARIABLE_STRING
+    end
   end
 end
