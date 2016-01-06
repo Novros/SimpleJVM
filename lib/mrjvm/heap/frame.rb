@@ -42,5 +42,12 @@ module Heap
     def self::op_stack=(op_stack)
       @@op_stack = op_stack
     end
+
+    # Synchronized access to stack pointer
+    def sp=(value)
+      MRjvm::MRjvm.mutex.synchronize do
+        @sp = value
+      end
+    end
   end
 end

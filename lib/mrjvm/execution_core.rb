@@ -14,6 +14,13 @@ class ExecutionCore
     # Start garbage collector
   end
 
+  # Synchronized access to frame pointer
+  def fp=(value)
+    MRjvm::MRjvm.mutex.synchronize do
+      @fp = value
+    end
+  end
+
   def execute(frame_stack)
     frame = frame_stack[fp]
 
@@ -28,7 +35,6 @@ class ExecutionCore
 
     byte_code = get_method_byte_code(frame)
     while true
-      sleep 0.02
       MRjvm.debug('----------------------------------------------------------------')
       MRjvm.debug('' << fp.to_s << ':' << frame.pc.to_s << ' bytecode ' << byte_code[frame.pc])
       MRjvm.debug('[STACK] sp: ' << frame.sp.to_s)
@@ -665,10 +671,13 @@ class ExecutionCore
     for i in 0..parameters_count do
       frame_stack[fp+1].locals[i] = frame_stack[fp].stack[frame_stack[fp].sp-parameters_count+i]
     end
-
+    MRjvm::MRjvm.mutex.synchronize do
     @fp += 1
+    end
     return_value = execute(frame_stack)
+    MRjvm::MRjvm.mutex.synchronize do
     @fp -= 1
+    end
 
     frame_stack[fp].sp -= parameters_count
     frame_stack[fp].stack[frame_stack[fp].sp] = return_value # At top should be return value

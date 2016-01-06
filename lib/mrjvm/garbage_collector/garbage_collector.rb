@@ -3,31 +3,31 @@ require 'thread'
 
 class GarbageCollector
   # Number of seconds, when garbage collector check object heap
-  TIMEOUT = 0.05
+  TIMEOUT = 0.1
 
   attr_accessor :stop_gc
 
   # Start garbage collector
-  def run(object_heap, frame_stack, frame_pointer, mutex)
+  def run(execution_core, frame_stack)
     MRjvm.debug('Garbage collector started')
 
-    @object_heap = object_heap
+    @object_heap = execution_core.object_heap
     # if JVM set this variable as true, GC thread will be automatically stopped
     @stop_gc = false
 
     Thread.new do
       execute_code_every(TIMEOUT) do
         # mutex access shared variables
-        mutex.synchronize do
+        MRjvm::MRjvm.mutex.synchronize do
           # this array contains references to live objects
           # all items are heap_id of object instance
           @live_objects = []
           check_object_heap
-          check_frame_stack(frame_stack, frame_pointer)
+          check_frame_stack(frame_stack, execution_core.fp)
           clear_garbage
         end
         # stop garbage collector when all objects were deleted
-        #@stop_gc && Thread.stop
+        @stop_gc && Thread.stop
       end
 
     end
@@ -40,6 +40,7 @@ class GarbageCollector
     end
   end
 
+  # Iterate object variables and check it for life objects
   def check_object_variables(object)
     object.variables.each do |object_variable|
       check_stack_variable(object_variable)
