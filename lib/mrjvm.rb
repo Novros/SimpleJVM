@@ -74,14 +74,11 @@ module MRjvm
 
       gc = GarbageCollector.new
       # Start garbage collector
-      gc_thread = gc.run(object_heap, frame_stack, executing_core.fp, @@mutex)
+      gc.run(executing_core, frame_stack)
       # Execute java code
       executing_core.execute(frame_stack)
-      # Set stop attribute as true and wait for gc thread
-      sleep 2
+      # Set stop attribute as true
       gc.stop_gc = true
-      #gc_thread.join
-      puts object_heap
     end
 
     def load_std_classes(class_heap)

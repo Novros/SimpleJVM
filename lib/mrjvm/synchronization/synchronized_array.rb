@@ -1,8 +1,7 @@
 require_relative '../../mrjvm'
 
+# Synchronized access to shared resources for GC thread and main thread
 class SynchronizedArray < Array
-
-
   def push(value)
     MRjvm::MRjvm.mutex.synchronize do
       super(value)

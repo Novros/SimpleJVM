@@ -1,7 +1,7 @@
 require_relative '../../mrjvm'
 
+# Synchronized access to shared resources for GC thread and main thread
 class SynchronizedHash < Hash
-
   def []=(key, value)
     MRjvm::MRjvm.mutex.synchronize do
       super(key, value)
