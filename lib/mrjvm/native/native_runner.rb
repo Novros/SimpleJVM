@@ -28,7 +28,7 @@ module Native
 
       args = [nil, nil]
       (1..params_count).each do |i|
-        args << frame.stack[frame.sp - params_count + i].value
+        args << frame.locals[i].value
       end
 
       arg_types = get_method_argument_types(method_descriptor)
@@ -42,7 +42,7 @@ module Native
     end
 
     def native_print
-      string_pointer = frame.stack[frame.sp]
+      string_pointer = frame.locals[1]
       string = object_heap.get_object(string_pointer)
       char_array = object_heap.get_object(string.variables[3])
       text = ''
@@ -54,19 +54,20 @@ module Native
     end
 
     def load_native_library
-      stack_variable = frame.stack[frame.sp]
-      class_heap.load_native_library(stack_variable.value, frame.java_class)
+      stack_variable = object_heap.get_object(frame.locals[0])
+      string = char_array_to_string(stack_variable.variables[3])
+      class_heap.load_native_library(string, frame.java_class)
       Heap::StackVariable.new(Heap::VARIABLE_INT, 0)
     end
 
     def string_builder_append_number
-      string_builder_pointer = frame.stack[frame.sp - 1]
+      string_builder_pointer = frame.locals[0]
       string_builder = object_heap.get_object(string_builder_pointer)
       string_builder.variables[0] = object_heap.create_string_object('', class_heap) if string_builder.variables[0].nil?
       string_builder_string = object_heap.get_object(string_builder.variables[0])
       char_array = object_heap.get_object(string_builder_string.variables[3]).variables
 
-      value = frame.stack[frame.sp].value
+      value = frame.locals[1].value
       value.to_s.each_char do |char|
         char_array << Heap::StackVariable.new(Heap::VARIABLE_CHAR, char.ord)
       end
@@ -75,13 +76,13 @@ module Native
     end
 
     def string_builder_append_s
-      string_builder_pointer = frame.stack[frame.sp - 1]
+      string_builder_pointer = frame.locals[0]
       string_builder = object_heap.get_object(string_builder_pointer)
       string_builder.variables[0] = object_heap.create_string_object('', class_heap) if string_builder.variables[0].nil?
       string_builder_string = object_heap.get_object(string_builder.variables[0])
       char_array = object_heap.get_object(string_builder_string.variables[3]).variables
 
-      string_pointer = frame.stack[frame.sp]
+      string_pointer = frame.locals[1]
       string_object = object_heap.get_object(string_pointer)
       string_char_array = object_heap.get_object(string_object.variables[3]).variables
 
@@ -93,11 +94,20 @@ module Native
     end
 
     def string_builder_to_string_string
-      string_builder_pointer = frame.stack[frame.sp]
+      string_builder_pointer = frame.locals[0]
       string_builder = object_heap.get_object(string_builder_pointer)
       string_builder.variables[0] = object_heap.create_string_object('', class_heap) if string_builder.variables[0].nil?
       string_builder_string = object_heap.get_object(string_builder.variables[0])
       Heap::StackVariable.new(Heap::VARIABLE_STRING, string_builder_string.heap_id)
+    end
+
+    def char_array_to_string(array_pointer)
+      array = object_heap.get_object(array_pointer)
+      string = ''
+      array.variables.each do |char|
+        string << char.value.chr
+      end
+      string
     end
 
     def get_method_parameters_count(method_descriptor)

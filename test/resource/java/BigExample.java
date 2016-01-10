@@ -4,7 +4,7 @@ public class BigExample {
     public final int finalSimpleField = 100;
 
 
-    public static void main() {
+    public static void main(String[] args) {
         int i = 5;
         BigExample example = new BigExample();
         example.simple(i);
