@@ -1,20 +1,7 @@
 # TODO
-- byte_code
-    - interface methods
-    - dynamic methods
-- basic objects
-    - Implement java/lang/Object
-    - Implement java/lang/String
-    - Implement java/lang/StringBuilder
-    - Rewrite get_native_method
-- Test if interfaces are working.
-- Add garbage collection
 - Add exception support
 - Add cli support (in/out)
 - Add fio support
-- Repair switch with strings.
-- Add thread support
-- Add jar file support
 
 # MRjvm
 
