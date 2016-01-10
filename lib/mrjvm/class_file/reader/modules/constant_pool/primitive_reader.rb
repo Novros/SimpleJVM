@@ -4,7 +4,11 @@ module PrimitiveReader
   def read_integer
     integer = {}
     integer[:tag] = TagReader::CONSTANT_INTEGER
-    integer[:bytes] = load_bytes(4).to_i(16)
+    integer[:bytes] = load_bytes(4)
+
+    # calculate integer value from bytes, care on signed value to_i(16) is only for unsigned values
+    integer[:value] = [integer[:bytes].scan(/[0-9a-f]{2}/i).reverse.join].pack('H*').unpack('l')[0]
+    puts integer[:value]
     integer
   end
 

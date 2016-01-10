@@ -52,6 +52,7 @@ class ExecutionCore
     end
 
     byte_code = get_method_byte_code(frame)
+
     while true
       MRjvm.debug('----------------------------------------------------------------')
       MRjvm.debug('' << fp.to_s << ':' << frame.pc.to_s << ' bytecode ' << byte_code[frame.pc])
@@ -103,11 +104,15 @@ class ExecutionCore
         #-------------------------------------------------------------------------
         when OpCodes::BYTE_BIPUSH
           frame.sp += 1
-          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, byte_code[frame.pc+1].to_i(16))
+          # care on signed integer
+          int_number = byte_code[frame.pc+1].to_i(16)
+          int_number > 127 && (int_number = int_number - 256)
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, int_number)
           frame.pc += 2
         when OpCodes::BYTE_SIPUSH
           frame.sp += 1
-          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_SHORT, byte_code[frame.pc+1, 2].join('').to_i(16))
+          # care on signed short
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_SHORT, get_signed_branch_offset(byte_code[frame.pc+1, 2].join('')))
           frame.pc += 3
         when OpCodes::BYTE_LDC
           frame.sp += 1
@@ -320,7 +325,7 @@ class ExecutionCore
           frame.pc += 1
         # -------------------------- Control flow ----------------------------
         when OpCodes::BYTE_LCMP, OpCodes::BYTE_FCMPL, OpCodes::BYTE_FCMPG, OpCodes::BYTE_DCMPL, OpCodes::BYTE_DCMPG
-          frame.stack[frame.sp-1] = Heap::StackVariable.new(Heap::VARIABLE_INT, frame.stack[frame.sp] <=> frame.stack[frame.sp-1])
+          frame.stack[frame.sp-1] = Heap::StackVariable.new(Heap::VARIABLE_INT, frame.stack[frame.sp-1] <=> frame.stack[frame.sp])
           frame.sp -=1
           frame.pc +=1
         when OpCodes::BYTE_IFEQ

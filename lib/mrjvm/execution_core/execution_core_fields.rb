@@ -6,7 +6,7 @@ module ExecutionCoreFields
 
     case constant[:tag]
       when TagReader::CONSTANT_INTEGER
-        value = Heap::StackVariable.new(Heap::VARIABLE_INT, java_class.get_from_constant_pool(constant[:value_index]))
+        value = Heap::StackVariable.new(Heap::VARIABLE_INT, constant[:value])
       when TagReader::CONSTANT_LONG
         value = Heap::StackVariable.new(Heap::VARIABLE_LONG, constant[:value])
       when TagReader::CONSTANT_FLOAT
