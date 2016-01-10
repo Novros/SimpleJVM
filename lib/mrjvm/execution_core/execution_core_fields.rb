@@ -22,7 +22,7 @@ module ExecutionCoreFields
   end
 
   def put_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join.to_i(16) - 1
     object_id = frame.stack[frame.sp - 1]
     value = frame.stack[frame.sp]
 
@@ -34,7 +34,7 @@ module ExecutionCoreFields
   end
 
   def get_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join.to_i(16) - 1
     object_id = frame.stack[frame.sp]
 
     MRjvm.debug("Reading field from object: #{object_id} on index: #{index}.")
@@ -46,16 +46,15 @@ module ExecutionCoreFields
   def put_static_field(frame)
     value = frame.stack[frame.sp]
     frame.sp -= 1
-
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
-    frame.java_class.static_variables[index] = value
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join.to_i(16) - 1
+    frame.java_class.put_static_field(index, value)
 
     MRjvm.debug("Putting value into static field of class: #{frame.java_class.this_class_str}, #{index}, #{value}.")
   end
 
   def get_static_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
-    value = frame.java_class.static_variables[index]
+    index = get_method_byte_code(frame)[frame.pc+1, 2].join.to_i(16) - 1
+    value = frame.java_class.get_static_field(index, object_heap)
     frame.sp += 1
     frame.stack[frame.sp] = value
 

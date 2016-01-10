@@ -1,4 +1,7 @@
 module ClassFile
+  class NoSuchFieldError < StandardError
+  end
+
   class JavaClass
     attr_accessor :magic, :minor_version, :major_version,
                   :constant_pool_count, :constant_pool, :access_flags,
@@ -43,12 +46,74 @@ module ClassFile
       -1
     end
 
+    def get_method(method_name, method_descriptor)
+      methods[get_method_index(method_name, method_descriptor, false)]
+    end
+
+    def is_overriding_method(method_name, method_descriptor)
+      # This class must be subclass of A
+      if super_class_str == 'java/lang/Object'
+        false
+      else
+        super_class = get_super_class
+        super_class_method_index = super_class.get_method_index(method_name, method_descriptor, false)
+        return false if super_class_method_index == -1
+        super_class_method = super_class.methods[super_class_method_index]
+        access_flags = super_class_method[:access_flags].to_i(16)
+        if (access_flags & AccessFlagsReader::ACC_PUBLIC) != 0 ||
+            (access_flags & AccessFlagsReader::ACC_PROTECTED) != 0 ||
+            (access_flags & AccessFlagsReader::ACC_PRIVATE) == 0 # TODO Add and must be in same runtime package.
+          return true
+        # elsif m1 overrides a method m3, m3 distinct from m1, m3 distinct from m2, such that m3 overrides m2
+        #  return true
+        else
+          return false
+        end
+      end
+    end
+
     def create_object(index, object_heap)
       constant = constant_pool[index]
       constant = constant_pool[constant[:class_index]-1]
       name = get_from_constant_pool(constant[:name_index])
       java_class = class_heap.get_class(name)
       object_heap.create_object(java_class)
+    end
+
+    def get_static_field(index, object_heap)
+      field_ref = constant_pool[index]
+      raise StandardError, 'It is not field ref.' unless field_ref[:tag] == TagReader::CONSTANT_FIELDREF
+      field_in_class_name = constant_pool[constant_pool[field_ref[:class_index] - 1][:name_index] - 1][:bytes]
+
+      name_and_type = constant_pool[field_ref[:name_and_type_index] - 1]
+      name = constant_pool[name_and_type[:name_index] - 1 ][:bytes]
+      descriptor = constant_pool[name_and_type[:descriptor_index] - 1][:bytes]
+
+      field_in_class = class_heap.get_class(field_in_class_name)
+      field_in_class.get_static_value(name, descriptor, object_heap)
+    end
+
+    def get_static_value(name, descriptor, object_heap)
+      constant_pool.each do |constant|
+        if constant[:tag] == TagReader::CONSTANT_NAME_AND_TYPE
+          this_name = constant_pool[constant[:name_index] - 1][:bytes]
+          this_descriptor = constant_pool[constant[:descriptor_index] - 1][:bytes]
+          if name == this_name && descriptor == this_descriptor
+            class_name = this_descriptor[1,this_descriptor.size-2]
+            return object_heap.create_object(class_heap.get_class(class_name))
+          end
+        end
+      end
+      # TODO lookup in interfaces
+      if super_class_str == 'java/lang/Object'
+        raise NoSuchFieldError
+      else
+        get_super_class.get_static_value(name, descriptor, object_heap)
+      end
+    end
+
+    def put_static_field(index, value)
+
     end
 
     def to_s

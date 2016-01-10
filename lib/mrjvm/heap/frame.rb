@@ -6,7 +6,7 @@ module Heap
     # pc = program_counter, sp = stack_pointer
     attr_accessor :java_class, :method, :pc, :sp, :stack, :locals
 
-    @@op_stack = nil
+    @@stack_size= nil
 
     def initialize
       @java_class = nil
@@ -21,7 +21,7 @@ module Heap
       frame = Frame.new
       frame.java_class = java_class
       frame.method = method
-      frame.stack = @@op_stack
+      frame.stack = SynchronizedArray.new(@@stack_size, nil)
       frame.locals = SynchronizedArray.new(method[:attributes][0][:max_locals] + params_count, nil)
       frame
     end
@@ -30,17 +30,17 @@ module Heap
       frame = Frame.new
       frame.java_class = java_class
       frame.method = method
-      frame.stack = @@op_stack
+      frame.stack = SynchronizedArray.new(@@stack_size, nil)
       frame.locals = []
       frame
     end
 
-    def self::op_stack
-      @@op_stack
+    def self::stack_size
+      @@stack_size
     end
 
-    def self::op_stack=(op_stack)
-      @@op_stack = op_stack
+    def self::stack_size=(size)
+      @@stack_size = size
     end
 
     # Synchronized access to stack pointer

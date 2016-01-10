@@ -408,15 +408,15 @@ class ExecutionCore
         # -------------------------- Invoking methods ----------------------------
         when OpCodes::BYTE_INVOKEVIRTUAL
           MRjvm.debug('Invoking virtual method.')
-          execute_invoke(frame_stack, false)
+          execute_virtual_method(frame_stack)
           frame.pc += 3
         when OpCodes::BYTE_INVOKESPECIAL
           MRjvm.debug('Invoking special method.')
-          execute_invoke(frame_stack, false)
+          execute_special_method(frame_stack)
           frame.pc += 3
         when OpCodes::BYTE_INVOKESTATIC
           MRjvm.debug('Invoking static method')
-          execute_invoke(frame_stack, true)
+          execute_static_method(frame_stack)
           frame.pc += 3
         when OpCodes::BYTE_INVOKEINTERFACE
           MRjvm.debug('Invoking interface method')
