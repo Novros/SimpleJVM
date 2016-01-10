@@ -95,6 +95,8 @@ module Heap
         else
           if item[1].type.this_class_str.include? 'String'
             string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str} : #{item[1].variables[3]}\n"
+          elsif item[1].type.this_class_str.include? 'Integer'
+            string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str} : #{item[1].variables[1]}\n"
           else
             string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str}\n"
           end

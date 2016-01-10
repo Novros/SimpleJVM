@@ -63,6 +63,7 @@ class ExecutionCore
       MRjvm.debug(object_heap.to_s)
 
       byte_code_int = byte_code[frame.pc].to_i(16)
+
       case byte_code_int
         #-------------------------------------------------------------------------
         when OpCodes::BYTE_NOP
@@ -128,59 +129,59 @@ class ExecutionCore
           frame.pc += 3
         when OpCodes::BYTE_ILOAD, OpCodes::BYTE_LLOAD, OpCodes::BYTE_FLOAD, OpCodes::BYTE_DLOAD, OpCodes::BYTE_ALOAD
           frame.sp += 1
-          frame.stack[frame.sp] = frame.locals[byte_code[frame.pc+1].to_i(16)]
+          frame.stack[frame.sp] = frame.locals[byte_code[frame.pc+1].to_i(16)].clone
           frame.pc += 2
         when OpCodes::BYTE_ILOAD_0, OpCodes::BYTE_ILOAD_1, OpCodes::BYTE_ILOAD_2, OpCodes::BYTE_ILOAD_3
           frame.sp += 1
-          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_ILOAD_0]
+          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_ILOAD_0].clone
           frame.pc += 1
         when OpCodes::BYTE_LLOAD_0, OpCodes::BYTE_LLOAD_1, OpCodes::BYTE_LLOAD_2, OpCodes::BYTE_LLOAD_3
           frame.sp += 1
-          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_LLOAD_0]
+          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_LLOAD_0].clone
           frame.pc += 1
         when OpCodes::BYTE_FLOAD_0, OpCodes::BYTE_FLOAD_1, OpCodes::BYTE_FLOAD_2, OpCodes::BYTE_FLOAD_3
           frame.sp += 1
-          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_FLOAD_0]
+          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_FLOAD_0].clone
           frame.pc += 1
         when OpCodes::BYTE_DLOAD_0, OpCodes::BYTE_DLOAD_1, OpCodes::BYTE_DLOAD_2, OpCodes::BYTE_DLOAD_3
           frame.sp += 1
-          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_DLOAD_0]
+          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_DLOAD_0].clone
           frame.pc += 1
         when OpCodes::BYTE_ALOAD_0, OpCodes::BYTE_ALOAD_1, OpCodes::BYTE_ALOAD_2, OpCodes::BYTE_ALOAD_3
           frame.sp += 1
-          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_ALOAD_0]
+          frame.stack[frame.sp] = frame.locals[byte_code_int - OpCodes::BYTE_ALOAD_0].clone
           frame.pc += 1
         when OpCodes::BYTE_IALOAD, OpCodes::BYTE_LALOAD, OpCodes::BYTE_FALOAD, OpCodes::BYTE_DALOAD, OpCodes::BYTE_AALOAD, OpCodes::BYTE_BALOAD, OpCodes::BYTE_CALOAD, OpCodes::BYTE_SALOAD
           frame.stack[frame.sp-1] = object_heap.get_value_from_array(frame.stack[frame.sp-1], frame.stack[frame.sp].value)
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_ISTORE, OpCodes::BYTE_LSTORE, OpCodes::BYTE_FSTORE, OpCodes::BYTE_DSTORE, OpCodes::BYTE_ASTORE
-          frame.locals[byte_code[frame.pc+1].to_i(16)] = frame.stack[frame.sp]
+          frame.locals[byte_code[frame.pc+1].to_i(16)] = frame.stack[frame.sp].clone
           frame.sp -= 1
           frame.pc += 2
         when OpCodes::BYTE_ISTORE_0, OpCodes::BYTE_ISTORE_1, OpCodes::BYTE_ISTORE_2, OpCodes::BYTE_ISTORE_3
-          frame.locals[byte_code_int - OpCodes::BYTE_ISTORE_0] = frame.stack[frame.sp]
+          frame.locals[byte_code_int - OpCodes::BYTE_ISTORE_0] = frame.stack[frame.sp].clone
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_LSTORE_0, OpCodes::BYTE_LSTORE_1, OpCodes::BYTE_LSTORE_2, OpCodes::BYTE_LSTORE_3
-          frame.locals[byte_code_int - OpCodes::BYTE_LSTORE_0] = frame.stack[frame.sp]
+          frame.locals[byte_code_int - OpCodes::BYTE_LSTORE_0] = frame.stack[frame.sp].clone
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_FSTORE_0, OpCodes::BYTE_FSTORE_1, OpCodes::BYTE_FSTORE_2, OpCodes::BYTE_FSTORE_3
-          frame.locals[byte_code_int - OpCodes::BYTE_FSTORE_0] = frame.stack[frame.sp]
+          frame.locals[byte_code_int - OpCodes::BYTE_FSTORE_0] = frame.stack[frame.sp].clone
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_DSTORE_0, OpCodes::BYTE_DSTORE_1, OpCodes::BYTE_DSTORE_2, OpCodes::BYTE_DSTORE_3
-          frame.locals[byte_code_int - OpCodes::BYTE_DSTORE_0] = frame.stack[frame.sp]
+          frame.locals[byte_code_int - OpCodes::BYTE_DSTORE_0] = frame.stack[frame.sp].clone
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_ASTORE_0, OpCodes::BYTE_ASTORE_1, OpCodes::BYTE_ASTORE_2, OpCodes::BYTE_ASTORE_3
-          frame.locals[byte_code_int - OpCodes::BYTE_ASTORE_0] = frame.stack[frame.sp]
+          frame.locals[byte_code_int - OpCodes::BYTE_ASTORE_0] = frame.stack[frame.sp].clone
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_IASTORE, OpCodes::BYTE_LASTORE, OpCodes::BYTE_FASTORE, OpCodes::BYTE_DASTORE, OpCodes::BYTE_AASTORE, OpCodes::BYTE_BASTORE, OpCodes::BYTE_CASTORE, OpCodes::BYTE_SASTORE
           frame.sp -= 3
-          object_heap.get_object(frame.stack[frame.sp+1]).variables[frame.stack[frame.sp+2].value] = frame.stack[frame.sp+3]
+          object_heap.get_object(frame.stack[frame.sp+1]).variables[frame.stack[frame.sp+2].value] = frame.stack[frame.sp+3].clone
           frame.pc += 1
         when OpCodes::BYTE_POP
           frame.sp -= 1
@@ -191,7 +192,7 @@ class ExecutionCore
               frame.sp -= 2
           frame.pc += 1
         when OpCodes::BYTE_DUP
-          frame.stack[frame.sp+1] = frame.stack[frame.sp]
+          frame.stack[frame.sp+1] = frame.stack[frame.sp].clone
           frame.sp += 1
           frame.pc += 1
         when OpCodes::BYTE_DUP_X1
@@ -447,11 +448,12 @@ class ExecutionCore
         # ------------------------------- Exceptions -------------------------------
         # when OpCodes::BYTE_ATHROW
         # -------------------------------------------------------------------------
-        # when OpCodes::BYTE_CHECKCAST
+        when OpCodes::BYTE_CHECKCAST
+          frame.pc += 3
         when OpCodes::BYTE_INSTANCEOF
           index = byte_code[frame.pc + 1, 2].join.to_i(16)
           object_pointer = frame.stack[frame.sp]
-          object = object_heap.get_object(object_pointer);
+          object = object_heap.get_object(object_pointer)
           class_name = frame.java_class.get_from_constant_pool(frame.java_class.constant_pool[index-1][:name_index])
           frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, object.type.this_class_str == class_name)
           frame.pc += 3
