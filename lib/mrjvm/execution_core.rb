@@ -5,15 +5,32 @@ require_relative 'heap/object_heap'
 require_relative 'op_codes'
 require_relative 'native/native_runner'
 
+require_relative 'execution_core/execution_core_fields'
+require_relative 'execution_core/execution_core_methods'
+require_relative 'execution_core/execution_core_new'
+require_relative 'execution_core/execution_core_switch'
+require_relative 'execution_core/execution_core_native'
+require_relative 'execution_core/execution_core_debug'
+
 class ExecutionCore
   attr_accessor :class_heap, :object_heap, :fp
 
+  # -------------------------------------------------------------------------
+  include ExecutionCoreFields
+  include ExecutionCoreNew
+  include ExecutionCoreMethods
+  include ExecutionCoreSwitch
+  include ExecutionCoreNative
+  include ExecutionCoreDebug
+
+  # -------------------------------------------------------------------------
   def initialize
     @stack_var_zero = Heap::StackVariable.new(Heap::VARIABLE_INT, 0)
     @gc = GarbageCollector.new
     # Start garbage collector
   end
 
+  # -------------------------------------------------------------------------
   # Synchronized access to frame pointer
   def fp=(value)
     MRjvm::MRjvm.mutex.synchronize do
@@ -21,6 +38,7 @@ class ExecutionCore
     end
   end
 
+  # -------------------------------------------------------------------------
   def execute(frame_stack)
     frame = frame_stack[fp]
 
@@ -459,13 +477,10 @@ class ExecutionCore
         else
           raise StandardError, byte_code[frame.pc]
       end
-
-
       #@gc.run(object_heap, frame_stack, fp, '')
     end
     0
   end
-
 
   # -------------------------------------------------------------------------
   def get_signed_int_branch_offset(bytes)
@@ -476,324 +491,7 @@ class ExecutionCore
     [bytes.scan(/[0-9a-f]{2}/i).reverse.join].pack('H*').unpack('s')[0]
   end
 
-  # -------------------------------------------------------------------------
-  def load_constant(java_class, index)
-    MRjvm.debug('Loading constant from pool, class: ' << java_class.this_class_str << ', index: ' << index.to_s)
-
-    constant = java_class.constant_pool[index-1]
-
-    case constant[:tag]
-      when TagReader::CONSTANT_INTEGER
-        value = Heap::StackVariable.new(Heap::VARIABLE_INT, java_class.get_from_constant_pool(constant[:value_index]))
-      when TagReader::CONSTANT_LONG
-        value = Heap::StackVariable.new(Heap::VARIABLE_LONG, constant[:value])
-      when TagReader::CONSTANT_FLOAT
-        value = Heap::StackVariable.new(Heap::VARIABLE_FLOAT, constant[:value])
-      when TagReader::CONSTANT_DOUBLE
-        value = Heap::StackVariable.new(Heap::VARIABLE_DOUBLE, constant[:value])
-      when TagReader::CONSTANT_STRING
-        value = object_heap.create_string_object(java_class.get_from_constant_pool(constant[:string_index]), class_heap)
-      else
-        raise StandardError, '[ERROR] load_constant ' << constant[:tag].to_s
-    end
-    value
-  end
-
-  # -------------------------------------------------------------------------
-  def put_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
-    object_id = frame.stack[frame.sp - 1]
-    value = frame.stack[frame.sp]
-
-    MRjvm.debug("Putting value into field of object: #{object_id} on index: #{index} with value: #{value}.")
-
-    var_list = object_heap.get_object(object_id).variables
-    var_list[index] = value
-    frame.sp -= 2
-  end
-
-  def get_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
-    object_id = frame.stack[frame.sp]
-
-    MRjvm.debug("Reading field from object: #{object_id} on index: #{index}.")
-
-    var_list = object_heap.get_object(object_id).variables
-    frame.stack[frame.sp] = var_list[index]
-  end
-
-  def put_static_field(frame)
-    value = frame.stack[frame.sp]
-    frame.sp -= 1
-
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
-    frame.java_class.static_variables[index] = value
-
-    MRjvm.debug("Putting value into static field of class: #{frame.java_class.this_class_str}, #{index}, #{value}.")
-  end
-
-  def get_static_field(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16) - 1
-    value = frame.java_class.static_variables[index]
-    frame.sp += 1
-    frame.stack[frame.sp] = value
-
-    MRjvm.debug("Reading value from static field of class: #{frame.java_class.this_class_str}, #{index}.")
-  end
-
-  # -------------------------------------------------------------------------
-  def execute_new(frame)
-    frame.sp += 1
-    byte_code = get_method_byte_code(frame)
-    index = byte_code[frame.pc+1, 2].join('').to_i(16)
-
-    MRjvm.debug('Executed new on class index: ' << index.to_s << ' in class ' << frame.java_class.this_class_str)
-
-    frame.stack[frame.sp] = frame.java_class.create_object(index, object_heap)
-  end
-
-  def execute_new_array(frame)
-    type = get_method_byte_code(frame)[frame.pc+1].to_i(16)
-    count = frame.stack[frame.sp]
-
-    MRjvm.debug("Creating new array, type: #{type}, count: #{count}.")
-
-    frame.stack[frame.sp] = object_heap.create_new_array(type, count)
-  end
-
-  def execute_a_new_array(frame)
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
-    class_name = frame.java_class.get_from_constant_pool(frame.java_class.constant_pool[index-1][:name_index])
-    count = frame.stack[frame.sp]
-
-    MRjvm.debug("Creating new array, type: #{class_name}, count: #{count}.")
-
-    frame.stack[frame.sp] = object_heap.create_new_array(class_name, count)
-  end
-
-  def execute_new_a_multi_array(frame)
-    # TODO Check if works
-    index = get_method_byte_code(frame)[frame.pc+1, 2].join('').to_i(16)
-    class_name = frame.java_class.get_from_constant_pool(frame.java_class.constant_pool[index-1][:name_index])
-    dimensions = get_method_byte_code(frame)[frame.pc+1].to_i(16)
-    count = frame.stack[frame.sp-dimensions]
-    array_pointer = object_heap.create_new_array(class_name, count)
-    array = object_heap.get_object(array_pointer)
-
-    MRjvm.debug("Creating new array, type: #{class_name}, count: #{count}, dimensions: #{dimensions}.")
-
-    (1...dimensions).each do |i|
-      count = frame.stack[frame.sp-dimensions+i]
-      array.variables[i] = Array.new(count, nil)
-    end
-    frame.sp -= dimensions
-    frame.stack[frame.sp] = array_pointer
-  end
-
-  # -------------------------------------------------------------------------
-  def execute_table_switch(frame)
-    MRjvm.debug('Executing table switch.')
-
-    index = frame.stack[frame.sp].value
-    frame.sp -= 1
-    byte_code = get_method_byte_code(frame)
-    pc_offset = get_table_switch_padding_offset(frame)
-    default_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
-    pc_offset += 4
-    min_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
-    pc_offset += 4
-    max_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
-    pc_offset += 4
-    address_array = {}
-    (min_value..max_value).each do |i|
-      address_array[i.to_s.to_sym] = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
-      pc_offset += 4
-    end
-    address_array[index.to_s.to_sym].nil? ? default_value : address_array[index.to_s.to_sym]
-  end
-
-  def get_table_switch_padding_offset(frame)
-    4 - ((frame.pc) % 4)
-  end
-
-  def execute_table_lookup_switch(frame)
-    MRjvm.debug('Executing table lookup switch.')
-
-    index = frame.stack[frame.sp].value
-    frame.sp -= 1
-    byte_code = get_method_byte_code(frame)
-    pc_offset = get_table_switch_padding_offset(frame)
-    default_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
-    pc_offset += 4
-    count = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
-    pc_offset += 4
-    address_array = {}
-    (0...count).each do |i|
-      index_value = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
-      pc_offset += 4
-      address_array[index_value.to_s.to_sym] = byte_code[frame.pc + pc_offset, 4].join.to_i(16)
-      pc_offset += 4
-    end
-    address_array[index.to_s.to_sym].nil? ? default_value : address_array[index.to_s.to_sym]
-  end
-
-  # -------------------------------------------------------------------------
-  def execute_invoke(frame_stack, static)
-    method_index = frame_stack[fp].method[:attributes][0][:code][frame_stack[fp].pc+1, 2].join('').to_i(16)
-    method_constant = frame_stack[fp].java_class.constant_pool[method_index-1]
-    name_and_type_index = method_constant[:name_and_type_index]
-
-    class_index = method_constant[:class_index]
-    class_constant = frame_stack[fp].java_class.constant_pool[class_index-1]
-    class_name = frame_stack[fp].java_class.get_from_constant_pool(class_constant[:name_index])
-
-    method_constant = frame_stack[fp].java_class.constant_pool[name_and_type_index-1]
-    method_name = frame_stack[fp].java_class.get_from_constant_pool(method_constant[:name_index])
-    method_descriptor = frame_stack[fp].java_class.get_from_constant_pool(method_constant[:descriptor_index])
-
-    java_class = class_heap.get_class(class_name)
-    method_index = java_class.get_method_index(method_name, method_descriptor, static)
-    method = java_class.methods[method_index]
-
-    MRjvm.debug('Invoking method: ' << method_name << ', descriptor: ' << method_descriptor)
-
-    parameters_count = get_method_parameters_count(method_descriptor)
-    parameters_count -= 1 if static
-    # Prepare frame for invoked method
-    if (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_SUPER) != 0
-      frame_stack[fp+1] = Heap::Frame.initialize_with_class_method(java_class.get_super_class, method, parameters_count)
-    elsif (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_NATIVE) != 0
-      frame_stack[fp+1] = Heap::Frame.initialize_with_class_native_method(java_class, method)
-    else
-      frame_stack[fp+1] = Heap::Frame.initialize_with_class_method(java_class, method, parameters_count)
-    end
-    frame_stack[fp+1].sp = frame_stack[fp].sp
-    for i in 0..parameters_count do
-      frame_stack[fp+1].locals[i] = frame_stack[fp].stack[frame_stack[fp].sp-parameters_count+i]
-    end
-    MRjvm::MRjvm.mutex.synchronize do
-    @fp += 1
-    end
-    return_value = execute(frame_stack)
-    MRjvm::MRjvm.mutex.synchronize do
-    @fp -= 1
-    end
-
-    frame_stack[fp].sp -= parameters_count
-    frame_stack[fp].stack[frame_stack[fp].sp] = return_value # At top should be return value
-    frame_stack[fp].sp -= 1 if method_descriptor.include? ')V' # If it is void
-  end
-
-  def execute_dynamic_method(frame_stack)
-    # TODO Implements
-    raise StandardError, 'Dynamic methods not implemented.'
-  end
-
-  def execute_interface_method(frame_stack)
-    # TODO Implements
-    raise StandardError, 'Interface methods not implemented.'
-  end
-
-  # -------------------------------------------------------------------------
-  def get_method_parameters_count(method_descriptor)
-    count = 0
-    i = 1
-    while i < method_descriptor.size
-      if method_descriptor[i] == 'B' || method_descriptor[i] == 'C' ||
-          method_descriptor[i] == 'S' || method_descriptor[i] == 'I' ||
-          method_descriptor[i] == 'J' || method_descriptor[i] == 'F' ||
-          method_descriptor[i] == 'D' || method_descriptor[i] == 'L' ||
-          method_descriptor[i] == '['
-        count += 1
-        if method_descriptor[i] == 'L'
-          i += 1 while method_descriptor[i] != ';'
-        end
-      elsif method_descriptor[i] == ')'
-        break
-      end
-      i += 1
-    end
-    MRjvm.debug('[METHOD][COUNT] ' << count.to_s)
-    count
-  end
-
   def get_method_byte_code(frame)
     frame.method[:attributes][0][:code]
-  end
-
-  # -------------------------------------------------------------------------
-  def execute_native_method(frame_stack)
-    MRjvm.debug('Invoking native method.')
-
-    frame = frame_stack[@fp]
-    java_class = frame.java_class
-    class_name = java_class.this_class_str
-    method_name = java_class.get_from_constant_pool(frame.method[:name_index])
-    method_descriptor = java_class.get_from_constant_pool(frame.method[:descriptor_index])
-
-    MRjvm.debug('Invoking native method: ' << method_name << ', descriptor: ' << method_descriptor)
-
-    signature = class_name + '@' + method_name + method_descriptor
-    native_method = get_fake_native_method(signature)
-
-    runtime_environment = Native::NativeRunner.new
-    runtime_environment.frame = frame
-    runtime_environment.class_heap = class_heap
-    runtime_environment.object_heap = object_heap
-    if native_method.include? 'true_native'
-      runtime_environment.run(signature, true)
-    else
-      runtime_environment.run(native_method, false)
-    end
-  end
-
-  # -------------------------------------------------------------------------
-  # TODO: Only for testing
-  def get_fake_native_method(signature)
-    if signature.include? 'java/lang/String@valueOf(F)Ljava/lang/String;'
-      'string_value_of_f'
-    elsif signature.include? 'java/lang/String@valueOf(J)Ljava/lang/String;'
-      'string_value_of_j'
-    elsif signature.include? 'java/lang/StringBuilder@append(Ljava/lang/String;)Ljava/lang/StringBuilder;'
-      'string_builder_append_s'
-    elsif signature.include? 'java/lang/StringBuilder@append(I)Ljava/lang/StringBuilder;'
-      'string_builder_append_number'
-    elsif signature.include? 'java/lang/StringBuilder@append(C)Ljava/lang/StringBuilder;'
-      'string_builder_append_c'
-    elsif signature.include? 'java/lang/StringBuilder@append(Z)Ljava/lang/StringBuilder;'
-      'string_builder_append_z'
-    elsif signature.include? 'java/lang/StringBuilder@append(Ljava/lang/Object;)Ljava/lang/StringBuilder;'
-      'string_builder_append_o'
-    elsif signature.include? 'java/lang/StringBuilder@append(F)Ljava/lang/StringBuilder;'
-      'string_builder_append_number'
-    elsif signature.include? 'java/lang/StringBuilder@append(J)Ljava/lang/StringBuilder;'
-      'string_builder_append_number'
-    elsif signature.include? 'java/lang/StringBuilder@append(D)Ljava/lang/StringBuilder;'
-      'string_builder_append_number'
-    elsif signature.include? 'java/lang/StringBuilder@toString()Ljava/lang/String;'
-      'string_builder_to_string_string'
-    elsif signature.include? 'java/io/PrintStream@println(Ljava/lang/String;)V'
-      'native_print'
-    elsif signature.include? 'java/lang/System@loadLibrary(Ljava/lang/String;)V'
-      'load_native_library'
-    else
-      'true_native'
-    end
-  end
-
-  def get_locals_string(frame)
-    locals_string = "[LOCALS]\n["
-    frame.locals.each_with_index do |item, index|
-      locals_string << "(#{index} => #{item}), "
-    end
-    locals_string << ']'
-  end
-
-  def get_stack_string(frame)
-    stack_string = "[STACK]\n["
-    frame.stack.each_with_index do |i, index|
-      stack_string << "(#{index} => #{i}), "
-    end
-    stack_string << ']'
   end
 end
