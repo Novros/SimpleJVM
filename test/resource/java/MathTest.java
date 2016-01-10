@@ -1,6 +1,6 @@
 public class MathTest {
 
-    public static void main() {
+    public static void main(String[] args) {
         System.out.println("abs(-1)=" + Math.abs(-1));
         System.out.println("abs(-128)=" + Math.abs(-128));
         System.out.println("abs(127)=" + Math.abs(127));
