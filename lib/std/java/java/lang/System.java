@@ -8,4 +8,5 @@ public class System {
     public final static PrintStream err = new PrintStream();
 
     public static native void loadLibrary(String libName);
+    public static native void loadStdLibrary(String libName);
 }
