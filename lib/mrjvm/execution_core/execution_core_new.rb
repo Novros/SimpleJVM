@@ -2,7 +2,7 @@ module ExecutionCoreNew
   def execute_new(frame)
     frame.sp += 1
     byte_code = get_method_byte_code(frame)
-    index = (byte_code[frame.pc+1].to_i(16) << 8) + byte_code[frame.pc+1].to_i(16)
+    index = ((byte_code[frame.pc+1].to_i(16) << 8) + byte_code[frame.pc+2].to_i(16))
 
     MRjvm.debug('Executed new on class index: ' << index.to_s << ' in class ' << frame.java_class.this_class_str)
 

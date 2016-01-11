@@ -74,9 +74,20 @@ module ClassFile
 
     def create_object(index, object_heap)
       constant = constant_pool[index]
-      constant = constant_pool[constant[:class_index]-1]
+
+      case constant[:tag]
+        when TagReader::CONSTANT_METHODREF
+          constant = constant_pool[constant[:class_index]-1]
+        when TagReader::CONSTANT_STRING
+          constant = constant_pool[constant[:string_index]-1]
+          # create string
+          return object_heap.create_string_object(constant[:bytes], class_heap)
+      end
+
+      # get class name
       name = get_from_constant_pool(constant[:name_index])
       java_class = class_heap.get_class(name)
+      # create object
       object_heap.create_object(java_class)
     end
 
