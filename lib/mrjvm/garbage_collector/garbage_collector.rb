@@ -3,7 +3,7 @@ require 'thread'
 
 class GarbageCollector
   # Number of seconds, when garbage collector check object heap
-  TIMEOUT = 0.1
+  TIMEOUT = 0.5
 
   attr_accessor :stop_gc
 
