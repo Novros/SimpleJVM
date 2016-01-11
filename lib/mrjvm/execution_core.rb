@@ -11,8 +11,10 @@ require_relative 'execution_core/execution_core_new'
 require_relative 'execution_core/execution_core_switch'
 require_relative 'execution_core/execution_core_native'
 require_relative 'execution_core/execution_core_debug'
+require_relative 'execution_core/execution_core_throw'
 
 class ExecutionCore
+  # fp = frame pointer
   attr_accessor :class_heap, :object_heap, :fp
 
   # -------------------------------------------------------------------------
@@ -22,6 +24,7 @@ class ExecutionCore
   include ExecutionCoreSwitch
   include ExecutionCoreNative
   include ExecutionCoreDebug
+  include ExecutionCoreThrow
 
   # -------------------------------------------------------------------------
   def initialize
@@ -446,7 +449,9 @@ class ExecutionCore
           frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, object_heap.get_object(frame.stack[frame.sp]).values.length)
           frame.pc +=1
         # ------------------------------- Exceptions -------------------------------
-        # when OpCodes::BYTE_ATHROW
+        when OpCodes::BYTE_ATHROW
+          execute_throw(object_heap, frame_stack, fp)
+          frame.pc += 1
         # -------------------------------------------------------------------------
         when OpCodes::BYTE_CHECKCAST
           frame.pc += 3

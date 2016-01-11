@@ -7,9 +7,9 @@ public class String {
 	private int count = 0;
 
 	public String() {
-        this.count = 0;
-        this.value = new char[0];
-    }
+            this.count = 0;
+            this.value = new char[0];
+        }
 
 	public static native String valueOf(boolean b);
 	public static native String valueOf(char c);
