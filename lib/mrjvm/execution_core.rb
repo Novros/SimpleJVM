@@ -72,7 +72,7 @@ class ExecutionCore
         #------------------------------- Push constant ----------------------------
         when OpCodes::BYTE_ACONST_NULL
           frame.sp += 1
-          frame.stack[frame.sp] = nil
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_NILL, nil);
           frame.pc += 1
         when OpCodes::BYTE_ICONST_M1, OpCodes::BYTE_ICONST_0, OpCodes::BYTE_ICONST_1, OpCodes::BYTE_ICONST_2, OpCodes::BYTE_ICONST_3, OpCodes::BYTE_ICONST_4, OpCodes::BYTE_ICONST_5
           frame.sp += 1
@@ -180,8 +180,8 @@ class ExecutionCore
           frame.sp -= 1
           frame.pc += 1
         when OpCodes::BYTE_IASTORE, OpCodes::BYTE_LASTORE, OpCodes::BYTE_FASTORE, OpCodes::BYTE_DASTORE, OpCodes::BYTE_AASTORE, OpCodes::BYTE_BASTORE, OpCodes::BYTE_CASTORE, OpCodes::BYTE_SASTORE
+          object_heap.get_object(frame.stack[frame.sp-2]).variables[frame.stack[frame.sp-1].value] = frame.stack[frame.sp].clone
           frame.sp -= 3
-          object_heap.get_object(frame.stack[frame.sp+1]).variables[frame.stack[frame.sp+2].value] = frame.stack[frame.sp+3].clone
           frame.pc += 1
         when OpCodes::BYTE_POP
           frame.sp -= 1
@@ -443,7 +443,7 @@ class ExecutionCore
           execute_a_new_array(frame)
           frame.pc +=3
         when OpCodes::BYTE_ARRAYLENGTH
-          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, object_heap.get_object(frame.stack[frame.sp]).values.length)
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_INT, object_heap.get_object(frame.stack[frame.sp]).variables.length)
           frame.pc +=1
         # ------------------------------- Exceptions -------------------------------
         # when OpCodes::BYTE_ATHROW
@@ -468,10 +468,10 @@ class ExecutionCore
           frame.pc += 4
         # -------------------------------------------------------------------------
         when OpCodes::BYTE_IFNULL
-          (frame.stack[sp].nil?) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
+          (frame.stack[frame.sp].type == Heap::VARIABLE_NILL) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         when OpCodes::BYTE_IFNONNULL
-          (!frame.stack[sp].nil?) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
+          (!frame.stack[frame.sp].type == Heap::VARIABLE_NILL) ? frame.pc += get_signed_branch_offset(byte_code[frame.pc + 1, 2].join) : frame.pc += 3
           frame.sp -= 1
         # -------------------------------------------------------------------------
         when OpCodes::BYTE_GOTO_W

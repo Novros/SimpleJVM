@@ -1,11 +1,10 @@
-package file;
 
-import java.nio.file.Paths;
-/* import java.util.List;
+/*import java.nio.file.Paths;
+import java.util.List;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.nio.charset.Charset;
-import java.io.IOException; */
+import java.io.IOException;*/
 
 /* import java.io.File;
 import java.io.BufferedReader;
@@ -18,20 +17,29 @@ import java.io.FileNotFoundException;*/
 
 public class Main {
     public static void main(String[] args) {
-        String testFile = "/home/tux/Git/Bitbucket/mi-run-javavm/test/resource/file/file.txt";
-        System.out.println("Original file contents: " + getFileContent(testFile));
+        String fileName = "/home/tux/Git/Bitbucket/mi-run-javavm/test/resource/file/file.txt";
+        InputFile file = new InputFile(fileName);
+        String line = file.readLine();
+        while(line != null) {
+            System.out.println(line);
+            line = file.readLine();
+        }
+        InputFile file2 = new InputFile(fileName);
+        String text = file2.readFile();
+        System.out.println(text);
+        //System.out.println("Original file contents: " + getFileContent(testFile));
         // setFileContent(testFile, "The content of this file has been overwritten...");
         // System.out.println("New file contents: " + getFileContent(testFile));
     }
 
-    public static String getFileContent(String file) throws IOException {
+    /*public static String getFileContent(String file) throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(file), Charset.defaultCharset());
         String output = "";
         for(String line : lines) {
             output = output + line + "\n";
         }
         return output;
-    }
+    }*/
 
 
     /* public static String getFileContent(String file) {

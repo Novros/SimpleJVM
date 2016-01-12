@@ -1,5 +1,7 @@
 require_relative '../heap/object_heap'
 require 'fiddle'
+require 'fiddle/struct'
+require 'fiddle/import'
 
 module Native
   # This class run native methods from loaded shared libs.
@@ -28,7 +30,7 @@ module Native
 
       args = [nil, nil]
       (1..params_count).each do |i|
-        args << frame.locals[i].value
+        args << frame.locals[i]
       end
 
       arg_types = get_method_argument_types(method_descriptor)
@@ -36,18 +38,50 @@ module Native
       return_stack_type = get_method_return_stack_type(method_descriptor)
 
       native_method = Fiddle::Function.new(native_lib[method_name], arg_types, return_type)
+      args = prepare_args(args, native_method)
       return_value = native_method.call(*args)
-      # TODO Check what will returns if there will be array
+
+      if return_type == Fiddle::TYPE_VOIDP
+        raise StandardError, 'Native not support return pointer'
+      end
       Heap::StackVariable.new(return_stack_type, return_value)
+    end
+
+    def prepare_args(args, native_method)
+      new_args = []
+      args.each do |arg|
+        if arg.nil?
+          new_args << nil
+        else
+          if arg.type == Heap::VARIABLE_ARRAY
+            raise StandardError, 'Not support for native and array.'
+          elsif arg.type == Heap::VARIABLE_STRING
+            char_array_pointer = object_heap.get_object(arg).variables[3]
+            char_array = object_heap.get_object(char_array_pointer).variables
+            size = char_array.size()
+            pointer = Fiddle::Pointer.malloc(size * Fiddle::SIZEOF_CHAR, native_method)
+            char_array.each_with_index do |char, index|
+              pointer[index] = char.value
+            end
+            new_args << pointer
+          elsif arg.type == Heap::VARIABLE_OBJECT
+            raise StandardError, 'Not support for native and object.'
+          else
+            new_args << arg.value
+          end
+        end
+      end
+      new_args
     end
 
     def native_print
       string_pointer = frame.locals[1]
+      return if string_pointer.type == Heap::VARIABLE_NILL
       string = object_heap.get_object(string_pointer)
       char_array = object_heap.get_object(string.variables[3])
       text = ''
       char_array.variables.each do |char|
-        text << char.value.chr
+        text << char.value.chr unless char.nil?
       end
       puts text
       Heap::StackVariable.new(Heap::VARIABLE_INT, 0)
@@ -120,6 +154,10 @@ module Native
             method_descriptor[i] == 'D' || method_descriptor[i] == 'L' ||
             method_descriptor[i] == '['
           count += 1
+          if method_descriptor[i] == '['
+            i += 1
+            i += 1 if method_descriptor[i] != 'L'
+          end
           if method_descriptor[i] == 'L'
             i += 1 until method_descriptor[i] == ';'
           end
@@ -138,25 +176,25 @@ module Native
       while i < method_descriptor.size
         break if method_descriptor[i] == ')'
         types << case method_descriptor[i]
-                 when 'B', 'C'
-                   Fiddle::TYPE_CHAR
-                 when 'S'
-                   Fiddle::TYPE_SHORT
-                 when 'I'
-                   Fiddle::TYPE_INT
-                 when 'J'
-                   Fiddle::TYPE_LONG
-                 when 'F'
-                   Fiddle::TYPE_FLOAT
-                 when 'D'
-                   Fiddle::TYPE_DOUBLE
-                 when 'L'
-                   i += 1 until method_descriptor[i] == ';'
-                   Fiddle::TYPE_VOIDP
-                 when '['
-                   i += 1 until method_descriptor[i] == '['
-                   i += 1
-                   Fiddle::TYPE_VOIDP
+                   when 'B', 'C'
+                     Fiddle::TYPE_CHAR
+                   when 'S'
+                     Fiddle::TYPE_SHORT
+                   when 'I'
+                     Fiddle::TYPE_INT
+                   when 'J'
+                     Fiddle::TYPE_LONG
+                   when 'F'
+                     Fiddle::TYPE_FLOAT
+                   when 'D'
+                     Fiddle::TYPE_DOUBLE
+                   when 'L'
+                     i += 1 until method_descriptor[i] == ';'
+                     Fiddle::TYPE_VOIDP
+                   when '['
+                     i += 1 until method_descriptor[i] == '['
+                     i += 1
+                     Fiddle::TYPE_VOIDP
                  end
         i += 1
       end
@@ -168,22 +206,22 @@ module Native
       for i in 1..method_descriptor.size
         if method_descriptor[i - 1] == ')'
           type = case method_descriptor[i]
-                 when 'B', 'C'
-                   Fiddle::TYPE_CHAR
-                 when 'S'
-                   Fiddle::TYPE_SHORT
-                 when 'I'
-                   Fiddle::TYPE_INT
-                 when 'J'
-                   Fiddle::TYPE_LONG
-                 when 'F'
-                   Fiddle::TYPE_FLOAT
-                 when 'D'
-                   Fiddle::TYPE_DOUBLE
-                 when 'L', '['
-                   Fiddle::TYPE_VOIDP
-                 else
-                   Fiddle::TYPE_VOID
+                   when 'B', 'C'
+                     Fiddle::TYPE_CHAR
+                   when 'S'
+                     Fiddle::TYPE_SHORT
+                   when 'I'
+                     Fiddle::TYPE_INT
+                   when 'J'
+                     Fiddle::TYPE_LONG
+                   when 'F'
+                     Fiddle::TYPE_FLOAT
+                   when 'D'
+                     Fiddle::TYPE_DOUBLE
+                   when 'L', '['
+                     Fiddle::TYPE_VOIDP
+                   else
+                     Fiddle::TYPE_VOID
                  end
           break
         end
@@ -196,24 +234,24 @@ module Native
       for i in 1..method_descriptor.size
         if method_descriptor[i - 1] == ')'
           type = case method_descriptor[i]
-                 when 'B'
-                   Heap::VARIABLE_BYTE
-                 when 'C'
-                   Heap::VARIABLE_CHAR
-                 when 'S'
-                   Heap::VARIABLE_SHORT
-                 when 'I'
-                   Heap::VARIABLE_INT
-                 when 'J'
-                   Heap::VARIABLE_LONG
-                 when 'F'
-                   Heap::VARIABLE_FLOAT
-                 when 'D'
-                   Heap::VARIABLE_DOUBLE
-                 when 'L', '['
-                   Heap::VARIABLE_OBJECT
-                 else
-                   Heap::VARIABLE_INT
+                   when 'B'
+                     Heap::VARIABLE_BYTE
+                   when 'C'
+                     Heap::VARIABLE_CHAR
+                   when 'S'
+                     Heap::VARIABLE_SHORT
+                   when 'I'
+                     Heap::VARIABLE_INT
+                   when 'J'
+                     Heap::VARIABLE_LONG
+                   when 'F'
+                     Heap::VARIABLE_FLOAT
+                   when 'D'
+                     Heap::VARIABLE_DOUBLE
+                   when 'L', '['
+                     Heap::VARIABLE_OBJECT
+                   else
+                     Heap::VARIABLE_INT
                  end
           break
         end

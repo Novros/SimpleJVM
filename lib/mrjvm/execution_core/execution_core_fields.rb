@@ -47,7 +47,7 @@ module ExecutionCoreFields
     value = frame.stack[frame.sp]
     frame.sp -= 1
     index = get_method_byte_code(frame)[frame.pc+1, 2].join.to_i(16) - 1
-    frame.java_class.put_static_field(index, value)
+    frame.java_class.put_static_field(index, value, object_heap)
 
     MRjvm.debug("Putting value into static field of class: #{frame.java_class.this_class_str}, #{index}, #{value}.")
   end
@@ -58,6 +58,6 @@ module ExecutionCoreFields
     frame.sp += 1
     frame.stack[frame.sp] = value
 
-    MRjvm.debug("Reading value from static field of class: #{frame.java_class.this_class_str}, #{index}.")
+    MRjvm.debug("Reading value from static field of class: #{frame.java_class.this_class_str}, #{index}, value: #{value}.")
   end
 end

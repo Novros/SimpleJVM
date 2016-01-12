@@ -64,8 +64,8 @@ module ClassFile
             (access_flags & AccessFlagsReader::ACC_PROTECTED) != 0 ||
             (access_flags & AccessFlagsReader::ACC_PRIVATE) == 0 # TODO Add and must be in same runtime package.
           return true
-        # elsif m1 overrides a method m3, m3 distinct from m1, m3 distinct from m2, such that m3 overrides m2
-        #  return true
+          # elsif m1 overrides a method m3, m3 distinct from m1, m3 distinct from m2, such that m3 overrides m2
+          #  return true
         else
           return false
         end
@@ -92,16 +92,20 @@ module ClassFile
     end
 
     def get_static_field(index, object_heap)
+      unless static_variables[index].nil?
+        return static_variables[index]
+      end
       field_ref = constant_pool[index]
       raise StandardError, 'It is not field ref.' unless field_ref[:tag] == TagReader::CONSTANT_FIELDREF
       field_in_class_name = constant_pool[constant_pool[field_ref[:class_index] - 1][:name_index] - 1][:bytes]
 
       name_and_type = constant_pool[field_ref[:name_and_type_index] - 1]
-      name = constant_pool[name_and_type[:name_index] - 1 ][:bytes]
+      name = constant_pool[name_and_type[:name_index] - 1][:bytes]
       descriptor = constant_pool[name_and_type[:descriptor_index] - 1][:bytes]
 
       field_in_class = class_heap.get_class(field_in_class_name)
-      field_in_class.get_static_value(name, descriptor, object_heap)
+      static_variables[index] = field_in_class.get_static_value(name, descriptor, object_heap)
+      static_variables[index]
     end
 
     def get_static_value(name, descriptor, object_heap)
@@ -110,8 +114,12 @@ module ClassFile
           this_name = constant_pool[constant[:name_index] - 1][:bytes]
           this_descriptor = constant_pool[constant[:descriptor_index] - 1][:bytes]
           if name == this_name && descriptor == this_descriptor
-            class_name = this_descriptor[1,this_descriptor.size-2]
-            return object_heap.create_object(class_heap.get_class(class_name))
+            class_name = this_descriptor[1, this_descriptor.size-2]
+            if this_descriptor == 'Z' # Boolean
+              return Heap::StackVariable.new(Heap::VARIABLE_INT, 0)
+            else
+              return object_heap.create_object(class_heap.get_class(class_name))
+            end
           end
         end
       end
@@ -123,8 +131,21 @@ module ClassFile
       end
     end
 
-    def put_static_field(index, value)
-
+    def put_static_field(index, value, object_heap)
+      unless static_variables[index].nil?
+        return static_variables[index] = value
+      end
+      raise StandardError
+      # field_ref = constant_pool[index]
+      # raise StandardError, 'It is not field ref.' unless field_ref[:tag] == TagReader::CONSTANT_FIELDREF
+      # field_in_class_name = constant_pool[constant_pool[field_ref[:class_index] - 1][:name_index] - 1][:bytes]
+      #
+      # name_and_type = constant_pool[field_ref[:name_and_type_index] - 1]
+      # name = constant_pool[name_and_type[:name_index] - 1][:bytes]
+      # descriptor = constant_pool[name_and_type[:descriptor_index] - 1][:bytes]
+      #
+      # field_in_class = class_heap.get_class(field_in_class_name)
+      # static_variables[index] = field_in_class.get_static_value(name, descriptor, object_heap)
     end
 
     def to_s

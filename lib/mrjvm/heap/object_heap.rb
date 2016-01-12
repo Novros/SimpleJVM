@@ -59,7 +59,7 @@ module Heap
       object.variables[3] = array_pointer
       object.variables[1] = StackVariable.new(VARIABLE_INT, 0)
       object.variables[2] = StackVariable.new(VARIABLE_INT, string.size)
-      object_pointer
+      StackVariable.new(VARIABLE_STRING, object.heap_id)
     end
 
     def get_object(object_pointer)

@@ -9,6 +9,7 @@ module Heap
   VARIABLE_OBJECT = 7
   VARIABLE_ARRAY = 8
   VARIABLE_BYTE = 9
+  VARIABLE_NILL = 10
 
   # This class is stored in operand stack
   class StackVariable

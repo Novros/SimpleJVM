@@ -74,7 +74,7 @@ module MRjvm
 
       gc = GarbageCollector.new
       # Start garbage collector
-      gc.run(executing_core, frame_stack)
+      # gc.run(executing_core, frame_stack)
       # Execute java code
       executing_core.execute(frame_stack)
       # Set stop attribute as true

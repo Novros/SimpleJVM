@@ -15,6 +15,14 @@ extern "C" {
 JNIEXPORT jint JNICALL Java_Main_intMethod
   (JNIEnv *, jobject, jint);
 
+/*
+ * Class:     Main
+ * Method:    some_char
+ * Signature: ()[C
+ */
+JNIEXPORT char* JNICALL Java_Main_some_char
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

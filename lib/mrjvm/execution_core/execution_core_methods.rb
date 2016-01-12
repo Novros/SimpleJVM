@@ -315,6 +315,10 @@ module ExecutionCoreMethods
           method_descriptor[i] == 'D' || method_descriptor[i] == 'L' ||
           method_descriptor[i] == '['
         count += 1
+        if method_descriptor[i] == '['
+          i += 1
+          i += 1 if method_descriptor[i] != 'L'
+        end
         if method_descriptor[i] == 'L'
           i += 1 while method_descriptor[i] != ';'
         end
