@@ -8,7 +8,13 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        String fileName = "/home/tux/Git/Bitbucket/mi-run-javavm/test/resource/file/file.txt";
+        if (args.length < 1 ) {
+            System.err.println("No file as arguments.");
+            return;
+        }
+        System.out.println(args[0]);
+        //String fileName = "/home/tux/Git/Bitbucket/mi-run-javavm/test/resource/file/file.txt";
+        String fileName = args[0];
         System.out.println("Original file contents: " + getFileContent(fileName));
         // setFileContent(testFile, "The content of this file has been overwritten...");
         // System.out.println("New file contents: " + getFileContent(testFile));
@@ -18,7 +24,7 @@ public class Main {
         List<String> lines = Files.readAllLines(Paths.get(file), Charset.defaultCharset());
         String output = "";
         for(int i = 0; i < lines.size(); i++) {
-            output = output + lines.get(i);
+            output = output + lines.get(i) + "\n";
         }
         return output;
     }

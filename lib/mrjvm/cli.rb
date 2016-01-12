@@ -54,8 +54,8 @@ module MRjvm
       options
     end
   end
-
   options = CLI.parse(ARGV)
+  arg_index = 0
 
   if options[:debug].nil?
     DEBUG = false
@@ -68,19 +68,28 @@ module MRjvm
     case item[0].to_s
       when 'frame_size'
         jvm.frame_size = ARGV[index].to_i
+        arg_index += 1
       when 'op_size'
         jvm.op_size = ARGV[index].to_i
+        arg_index += 1
       when 'native'
         jvm.native_lib_path = ARGV[index]
+        arg_index += 1
       else
     end
   end
 
-  file = ARGV.last
+  file = ARGV[arg_index]
+  arg_index += 1
   if file.nil? || !File.file?(file)
     puts 'Missing argument file or it is not file.'
     exit(1)
   end
 
-  jvm.run(file)
+  arguments = []
+  (arg_index...ARGV.size()).each do |index|
+    arguments << ARGV[index]
+  end
+
+  jvm.run(file, arguments)
 end

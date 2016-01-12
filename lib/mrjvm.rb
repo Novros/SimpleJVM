@@ -47,7 +47,7 @@ module MRjvm
 
     ##
     # Run file with class Main and function main.
-    def run(file)
+    def run(file, arguments)
       class_heap = Heap::ClassHeap.new
       class_heap.native_lib_path = native_lib_path unless native_lib_path.nil?
       object_heap = Heap::ObjectHeap.new
@@ -67,8 +67,8 @@ module MRjvm
       fail StandardError, 'Class not contains static method main!' if method_index == -1
 
       frame_stack[0] = Heap::Frame.initialize_with_class_method(java_class, java_class.methods[method_index], 0) # No parameters
-      # start_frame = frame_stack[0]
-      # start_frame.locals[0] = Heap::StackVariable.new(Heap::VARIABLE_OBJECT, object_id)
+      args_pointer = create_args(arguments, class_heap, object_heap)
+      frame_stack[0].locals[0] = args_pointer
 
       executing_core = ExecutionCore.new
       executing_core.class_heap = class_heap
@@ -77,7 +77,7 @@ module MRjvm
 
       gc = GarbageCollector.new
       # Start garbage collector
-      # gc.run(executing_core, frame_stack)
+      gc.run(executing_core, frame_stack)
       # Execute java code
       executing_core.execute(frame_stack)
       # Set stop attribute as true
@@ -89,6 +89,15 @@ module MRjvm
       class_heap.load_class('java/lang/String')
       class_heap.load_class('java/lang/StringBuilder')
       class_heap.load_class('java/lang/System')
+    end
+
+    def create_args(arguments, class_heap, object_heap)
+      array_pointer = object_heap.create_new_array(Heap::VARIABLE_STRING, Heap::StackVariable.new(Heap::VARIABLE_INT, arguments.size))
+      array = object_heap.get_object(array_pointer)
+      arguments.each_with_index do |arg, index|
+         array.variables[index] = object_heap.create_string_object(arg, class_heap);
+      end
+      array_pointer
     end
   end
 end
