@@ -111,7 +111,7 @@ module Heap
       @object_map.each(&block);
     end
 
-    # Remove object from heap by object instance and heap id, withou synchronization
+    # Remove object from heap by object instance and heap id, without synchronization
     def remove_object(object)
       @object_map.delete(object.heap_id.to_s.to_sym, false)
       MRjvm.debug('Removing object from object heap with id: ' << object.heap_id.to_s << '; heap size: ' << @object_map.size.to_s)

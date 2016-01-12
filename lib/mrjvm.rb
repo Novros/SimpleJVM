@@ -8,6 +8,9 @@ require_relative 'mrjvm/garbage_collector/garbage_collector'
 require_relative 'mrjvm/synchronization/synchronized_array'
 require_relative 'mrjvm/heap/stack_variable'
 
+class MRjvmError < RuntimeError
+end
+
 # MRjvm is main module of our JVM.
 module MRjvm
   DEBUG_STRING = '[DEBUG] '

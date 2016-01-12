@@ -18,8 +18,15 @@ module ClassFile
       @static_variables = []
     end
 
-    def get_from_constant_pool(index)
-      @constant_pool[index-1][:bytes]
+    # if recursive parameter is true find constant recursive in child constants
+    def get_from_constant_pool(index, recursive = false)
+      constant = @constant_pool[index-1]
+
+      if constant.has_key?(:name_index) && recursive
+        @constant_pool[constant[:name_index]-1][:bytes]
+      else
+        constant[:bytes]
+      end
     end
 
     def this_class_str
@@ -27,11 +34,15 @@ module ClassFile
     end
 
     def super_class_str
-      get_from_constant_pool(@constant_pool[super_class-1][:name_index])
+      if super_class > 0
+        get_from_constant_pool(@constant_pool[super_class-1][:name_index])
+      end
     end
 
     def get_super_class
-      class_heap.get_class(super_class_str)
+      if super_class > 0
+        class_heap.get_class(super_class_str)
+      end
     end
 
     def get_method_index(method_name, method_descriptor, static)
