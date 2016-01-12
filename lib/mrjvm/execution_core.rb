@@ -75,7 +75,7 @@ class ExecutionCore
         #------------------------------- Push constant ----------------------------
         when OpCodes::BYTE_ACONST_NULL
           frame.sp += 1
-          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_NILL, nil);
+          frame.stack[frame.sp] = Heap::StackVariable.new(Heap::VARIABLE_NILL, nil)
           frame.pc += 1
         when OpCodes::BYTE_ICONST_M1, OpCodes::BYTE_ICONST_0, OpCodes::BYTE_ICONST_1, OpCodes::BYTE_ICONST_2, OpCodes::BYTE_ICONST_3, OpCodes::BYTE_ICONST_4, OpCodes::BYTE_ICONST_5
           frame.sp += 1
@@ -195,14 +195,14 @@ class ExecutionCore
               frame.sp -= 2
           frame.pc += 1
         when OpCodes::BYTE_DUP
-          frame.stack[frame.sp+1] = frame.stack[frame.sp].clone
           frame.sp += 1
+          frame.stack[frame.sp] = frame.stack[frame.sp-1].clone
           frame.pc += 1
         when OpCodes::BYTE_DUP_X1
-          frame.stack[frame.sp+1] = frame.stack[frame.sp]
-          frame.stack[frame.sp] = frame.stack[frame.sp-1]
-          frame.stack[frame.sp-1] = frame.stack[frame.sp+1]
           frame.sp += 1
+          frame.stack[frame.sp] = frame.stack[frame.sp-1]
+          frame.stack[frame.sp-1] = frame.stack[frame.sp-2]
+          frame.stack[frame.sp-2] = frame.stack[frame.sp]
           frame.pc += 1
         # when OpCodes::BYTE_DUP_X2
         # when OpCodes::BYTE_DUP2

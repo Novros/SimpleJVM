@@ -45,11 +45,11 @@ module ExecutionCoreFields
 
   def put_static_field(frame)
     value = frame.stack[frame.sp]
-    frame.sp -= 1
     index = get_method_byte_code(frame)[frame.pc+1, 2].join.to_i(16) - 1
     frame.java_class.put_static_field(index, value, object_heap)
 
     MRjvm.debug("Putting value into static field of class: #{frame.java_class.this_class_str}, #{index}, #{value}.")
+    frame.sp -= 1
   end
 
   def get_static_field(frame)
