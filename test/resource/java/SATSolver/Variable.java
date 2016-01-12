@@ -29,11 +29,6 @@ public class Variable {
 		return !((combination >> this.getIndex() - 1 & 1) == this.isNegation());
 	}
 
-	public boolean evaluate(boolean[] valuesOfVariables) {
-		return ((isNegation() == 1) && !valuesOfVariables[this.getIndex()-1]) ||
-				((isNegation() == 0) && valuesOfVariables[this.getIndex()-1]);
-	}
-
 	@Override
 	public String toString() {
 		return "{" + index +
