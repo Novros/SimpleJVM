@@ -7,7 +7,12 @@ class InputFile
   end
 
   def read_line
-    @file.gets
+    line = @file.gets
+    if line.nil?
+      nil
+    else
+      line.chomp
+    end
   end
 
   def read_file
