@@ -1,14 +1,13 @@
 package java.util;
 
-public class ArrayList<E> {
+import java.util.List;
+
+public class ArrayList<E> implements List<E> {
 	private Object[] elementData;
-	private static final int DEFAULT_CAPACITY = 10;
-	private static final Object[] EMPTY_ELEMENTDATA = new Object[0];
 	private int size = 0;
 
-
 	public ArrayList() {
-		this.elementData = new Object[DEFAULT_CAPACITY];
+		this.elementData = new Object[10];
 	}
 
 	private void rangeCheck(int index) {

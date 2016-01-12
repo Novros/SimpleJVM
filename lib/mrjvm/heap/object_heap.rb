@@ -93,8 +93,8 @@ module Heap
         if item[1].type.is_a? String
           string << "[DEBUG] \t#{item[0]} => #{item[1].type}\n"
         else
-          if item[1].type.this_class_str.include? 'String'
-            string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str} : #{item[1].variables[3]}\n"
+          if item[1].type.this_class_str == 'java/lang/String'
+            string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str} : #{char_array_to_string(item[1].variables[3])}\n"
           elsif item[1].type.this_class_str.include? 'Integer'
             string << "[DEBUG] \t#{item[0]} => #{item[1].type.this_class_str} : #{item[1].variables[1]}\n"
           else
@@ -103,6 +103,16 @@ module Heap
         end
       end
       string << '[DEBUG]'
+      string
+    end
+
+    def char_array_to_string(array_pointer)
+      return if array_pointer.nil?
+      array = @object_map[array_pointer.value.to_s.to_sym]
+      string = ''
+      array.variables.each do |char|
+        string << char.value.chr unless char.nil?
+      end
       string
     end
 

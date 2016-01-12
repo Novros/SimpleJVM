@@ -1,23 +1,24 @@
 package java.nio.file;
 
-import java.utils.List;
-import java.utils.ArrayList;
+import java.util.List;
+import java.util.ArrayList;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.InputFile;
 
 public class Files {
 
-    // Native method to read one line from file.
-    private static native char[] readLineNative();
-    // Native method to read all lines from file.
-    private static native String[] readAllLinesNative(String file);
-    // Read line from file by native readLine
-    private static String readLine();
-
-
     public static List<String> readAllLines(Path path, Charset cs) throws IOException {
-        List<String> result = new ArrayList<>();
+        String path_str = path.get();
+        InputFile file = new InputFile(path_str);
+        ArrayList<String> result = new ArrayList<>();
 
-        for(;;;) {
-            String line =
+        String line = file.readLine();
+        while(line != null) {
+            result.add(line);
+            line = file.readLine();
         }
+        return result;
     }
 }

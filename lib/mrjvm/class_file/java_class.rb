@@ -143,8 +143,10 @@ module ClassFile
     end
 
     def put_static_field(index, value, object_heap)
-      unless static_variables[index].nil?
-        return static_variables[index] = value
+      puts self
+      if static_variables[index].nil?
+        static_variables[index] = value
+        return
       end
       raise StandardError
       # field_ref = constant_pool[index]

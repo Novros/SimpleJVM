@@ -1,3 +1,5 @@
+package java.nio.file;
+
 public class InputFile {
 
     private String fileName;

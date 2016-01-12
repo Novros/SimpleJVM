@@ -66,8 +66,66 @@ module ExecutionCoreMethods
 
   # --------------------------------------------------------------------------------------------------------------------
   def execute_interface_method(frame_stack)
-    # TODO Implements
-    raise StandardError, 'Interface methods not implemented.'
+    actual_frame = frame_stack[fp]
+
+    # Get method and class indexes
+    method_index = actual_frame.method[:attributes][0][:code][actual_frame.pc+1, 2].join.to_i(16)
+    method_constant = actual_frame.java_class.constant_pool[method_index-1]
+    name_and_type_index = method_constant[:name_and_type_index]
+
+    # Get class info
+    class_index = method_constant[:class_index]
+    class_constant = actual_frame.java_class.constant_pool[class_index-1]
+    class_name = actual_frame.java_class.get_from_constant_pool(class_constant[:name_index])
+
+    # Get method info
+    method_constant = actual_frame.java_class.constant_pool[name_and_type_index-1]
+    method_name = actual_frame.java_class.get_from_constant_pool(method_constant[:name_index])
+    method_descriptor = actual_frame.java_class.get_from_constant_pool(method_constant[:descriptor_index])
+
+    MRjvm.debug('Invoking virtual method: ' << method_name << ', descriptor: ' << method_descriptor)
+
+    # Get parameters count to get object ref
+    parameters_count = get_method_parameters_count(method_descriptor)
+
+    # Get object ref
+    object_pointer = actual_frame.stack[actual_frame.sp - parameters_count]
+    object = object_heap.get_object(object_pointer)
+
+    # Get class and method
+    java_class = get_virtual_method_class(object.type, method_name, method_descriptor)
+    method = java_class.get_method(method_name, method_descriptor)
+
+    # Prepare frame for invoked method
+    if (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_SUPER) != 0
+      frame_stack[fp+1] = Heap::Frame.initialize_with_class_method(java_class.get_super_class, method, parameters_count)
+    elsif (method[:access_flags].to_i(16) & AccessFlagsReader::ACC_NATIVE) != 0
+      frame_stack[fp+1] = Heap::Frame.initialize_with_class_native_method(java_class, method)
+    else
+      frame_stack[fp+1] = Heap::Frame.initialize_with_class_method(java_class, method, parameters_count)
+    end
+
+    # Copy parameters to locals
+    # frame_stack[fp+1].sp = actual_frame.sp
+    for i in 0..parameters_count do
+      frame_stack[fp+1].locals[i] = actual_frame.stack[actual_frame.sp-parameters_count+i]
+    end
+
+    MRjvm::MRjvm.mutex.synchronize do
+      @fp += 1
+    end
+
+    # Execute next method
+    return_value = execute(frame_stack)
+
+    MRjvm::MRjvm.mutex.synchronize do
+      @fp -= 1
+    end
+
+    # Remove parameters from stack and store return value.
+    actual_frame.sp -= parameters_count
+    actual_frame.stack[actual_frame.sp] = return_value # At top should be return value
+    actual_frame.sp -= 1 if method_descriptor.include? ')V' # If it is void
   end
 
   # --------------------------------------------------------------------------------------------------------------------

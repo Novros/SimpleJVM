@@ -52,7 +52,16 @@ module ExecutionCoreNative
       'native_print'
     elsif signature.include? 'java/lang/System@loadLibrary(Ljava/lang/String;)V'
       'load_native_library'
+    elsif signature.include? 'InputFile@readLine()Ljava/lang/String;'
+      'read_line'
+    elsif signature.include? 'InputFile@readFile()Ljava/lang/String;'
+      'read_file'
+    elsif signature.include? 'InputFile@open(Ljava/lang/String;)V'
+      'open_read'
+    elsif signature.include? 'OutputFile@open(Ljava/lang/String;)V'
+      'open_write'
     else
+      puts signature
       'true_native'
     end
   end
