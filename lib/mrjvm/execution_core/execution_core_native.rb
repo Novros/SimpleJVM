@@ -58,8 +58,16 @@ module ExecutionCoreNative
       'read_file'
     elsif signature.include? 'InputFile@open(Ljava/lang/String;)V'
       'open_read'
+    elsif signature.include? 'InputFile@close()V'
+      'close_read'
     elsif signature.include? 'OutputFile@open(Ljava/lang/String;)V'
       'open_write'
+    elsif signature.include? 'OutputFile@close()V'
+      'close_write'
+    elsif signature.include? 'OutputFile@writeLine(Ljava/lang/String;)V'
+      'write_line'
+    elsif signature.include? 'OutputFile@write(Ljava/lang/String;)V'
+      'write'
     else
       puts signature
       'true_native'

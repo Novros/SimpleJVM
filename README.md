@@ -1,8 +1,3 @@
-# TODO
-- Add exception support
-- Add cli support (in/out)
-- Add fio support
-
 # MRjvm
 
 Our implementation of jvm.
