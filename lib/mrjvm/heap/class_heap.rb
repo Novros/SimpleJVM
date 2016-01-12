@@ -6,6 +6,9 @@ module Heap
   class ClassLoaderError < StandardError
   end
 
+  class NativeLibraryError < StandardError
+  end
+
   ##
   # This heap contains loaded classes.
   class ClassHeap
@@ -115,7 +118,11 @@ module Heap
     def get_native_library(class_name)
       MRjvm.debug("Loading native library for class: #{class_name}")
 
-      @native_map[class_name.to_s.to_sym]
+      lib = @native_map[class_name.to_s.to_sym]
+      if lib.nil?
+        raise NativeLibraryError, 'Could not load library with name: ' << class_name
+      end
+      lib
     end
 
     def to_s

@@ -10,7 +10,7 @@ module ExecutionCoreDebug
   def get_stack_string(frame)
     stack_string = "[STACK]\n["
     frame.stack.each_with_index do |i, index|
-      stack_string << "(#{index} => #{i}), "
+       stack_string << "(#{index} => #{i}), "
     end
     stack_string << ']'
   end

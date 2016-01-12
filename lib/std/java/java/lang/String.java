@@ -11,6 +11,11 @@ public class String {
             this.value = new char[0];
         }
 
+    public String(char[] array) {
+        this.count = array.length;
+        this.value = array;
+    }
+
 	public static native String valueOf(boolean b);
 	public static native String valueOf(char c);
 	public static native String valueOf(int i);
