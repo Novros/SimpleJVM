@@ -20,7 +20,8 @@ public class BruteForce {
 
 		for (int x=0; x<combinationsCount; x++) {
                         System.out.println("iteration start " + x);
-			if (this.formula.evaluate(x)) {
+			boolean evaluation = formula.evaluate(x);
+			if (evaluation) {
                                 System.out.println("true");
 				int combinationWeight = getCombinationWeight(x, formula);
 				if (combinationWeight > maxWeight) {
