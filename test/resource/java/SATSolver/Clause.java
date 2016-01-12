@@ -18,12 +18,15 @@ public class Clause {
 	}
 
 	public boolean evaluate(int combination) {
-		for (Variable variable: this.variables) {
+                System.out.println("clause evaluation start");
+		for (int i=0; i<variables.size(); i++) {
+			Variable variable = variables.get(i);
 			if (variable.evaluate(combination)) {
+                                System.out.println("clause true");
 				return true;
 			}
 		}
-
+		
 		return false;
 	}
 

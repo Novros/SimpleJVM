@@ -92,6 +92,10 @@ module Heap
       StackVariable.new(@type, value >> other)
     end
 
+    def to_int
+      @value
+    end
+
     def to_s
       "{type#{type}:#{value}}"
     end
