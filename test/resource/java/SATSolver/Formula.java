@@ -32,7 +32,8 @@ public class Formula {
 	}
 
 	public Variable getVariable(int index) {
-		for (Variable variable: variables) {
+		for (int i=0; i<variables.size(); i++) {
+			Variable variable = variables.get(i);
 			if (variable.getIndex() == index) {
 				return variable;
 			}
@@ -42,19 +43,9 @@ public class Formula {
 	}
 
 	public boolean evaluate(int combination) {
-		for (Clause clause: this.clauses) {
+		for (int i=0; i<clauses.size(); i++) {
+			Clause clause = clauses.get(i);
 			if (!clause.evaluate(combination)) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	public boolean evaluate(boolean[] valuesOfVariables) {
-		int ok = 0;
-		for (Clause clause: this.clauses) {
-			if (!clause.evaluate(valuesOfVariables)) {
 				return false;
 			}
 		}

@@ -27,16 +27,6 @@ public class Clause {
 		return false;
 	}
 
-	public boolean evaluate(boolean[] valuesOfVariables) {
-		for (Variable variable: this.variables) {
-			if (variable.evaluate(valuesOfVariables)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	@Override
 	public String toString() {
 		return "{" + variables +
