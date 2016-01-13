@@ -69,7 +69,6 @@ module ExecutionCoreNative
     elsif signature.include? 'OutputFile@write(Ljava/lang/String;)V'
       'write'
     else
-      puts signature
       'true_native'
     end
   end

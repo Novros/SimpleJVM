@@ -1,7 +1,6 @@
 module NativeRunTypes
   def get_method_argument_types(method_descriptor)
-    # First two types: JNIenv, jobject
-    types = [Fiddle::TYPE_VOIDP, Fiddle::TYPE_VOIDP]
+    types = []
     i = 1
     while i < method_descriptor.size
       break if method_descriptor[i] == ')'

@@ -11,7 +11,7 @@ module NativeRun
     native_lib = class_heap.get_native_library(class_name)
     params_count = get_method_parameters_count(method_descriptor)
 
-    args = [nil, nil]
+    args = []
     (1..params_count).each do |i|
       args << frame.locals[i]
     end
