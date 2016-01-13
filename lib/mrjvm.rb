@@ -3,10 +3,10 @@ require 'mrjvm/class_file/java_class'
 require 'mrjvm/heap/class_heap'
 require 'mrjvm/heap/object_heap'
 require 'mrjvm/heap/frame'
-require 'mrjvm/execution_core'
+require 'mrjvm/heap/stack_variable'
+require 'mrjvm/execution_core/execution_core'
 require_relative 'mrjvm/garbage_collector/garbage_collector'
 require_relative 'mrjvm/synchronization/synchronized_array'
-require_relative 'mrjvm/heap/stack_variable'
 
 class MRjvmError < RuntimeError
 end

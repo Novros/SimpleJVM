@@ -23,7 +23,7 @@ module Heap
       object.heap_id = @object_id
       object.type = java_class
       object.variables = SynchronizedArray.new(java_class.fields_count, nil)
-      @object_map[object.heap_id.to_s.to_sym] = object
+      @object_map[object.heap_id] = object
       @object_id += 1
       StackVariable.new(VARIABLE_OBJECT, @object_id - 1)
     end
@@ -65,7 +65,7 @@ module Heap
     def get_object(object_pointer)
       MRjvm.debug('Reading object from object heap with id:' << object_pointer.value.to_s)
 
-      @object_map[object_pointer.value.to_s.to_sym]
+      @object_map[object_pointer.value]
     end
 
     def create_new_array(type, count)
@@ -75,7 +75,7 @@ module Heap
       object.heap_id = @object_id
       object.type = 'Array@' + type.to_s
       object.variables = Array.new(count.value, nil)
-      @object_map[object.heap_id.to_s.to_sym] = object
+      @object_map[object.heap_id] = object
       @object_id += 1
       StackVariable.new(VARIABLE_ARRAY, @object_id - 1)
     end
@@ -83,7 +83,7 @@ module Heap
     def get_value_from_array(array_pointer, index)
       MRjvm.debug('Reading value from array with heap_id:' + array_pointer.value.to_s + ' on index: ' + index.to_s)
 
-      array_object = @object_map[array_pointer.value.to_s.to_sym]
+      array_object = @object_map[array_pointer.value]
       array_object.variables[index]
     end
 
@@ -108,7 +108,7 @@ module Heap
 
     def char_array_to_string(array_pointer)
       return if array_pointer.nil?
-      array = @object_map[array_pointer.value.to_s.to_sym]
+      array = @object_map[array_pointer.value]
       string = ''
       array.variables.each do |char|
         string << char.value.chr unless char.nil?
@@ -123,8 +123,8 @@ module Heap
 
     # Remove object from heap by object instance and heap id, without synchronization
     def remove_object(object)
-      @object_map.delete(object.heap_id.to_s.to_sym, false)
-      MRjvm.debug('Removing object from object heap with id: ' << object.heap_id.to_s << '; heap size: ' << @object_map.size.to_s)
+      @object_map.delete(object.heap_id, false)
+      MRjvm.debug('Removing object from object heap with id: ' + object.heap_id.to_s + '; heap size: ' + @object_map.size.to_s)
     end
   end
 end

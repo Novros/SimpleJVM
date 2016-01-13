@@ -3,7 +3,6 @@ require_relative 'version'
 require_relative '../mrjvm'
 require_relative 'class_file/reader/class_file_reader'
 
-# Module for solving sudoku
 module MRjvm
 
   # Interface for command line access
@@ -11,7 +10,7 @@ module MRjvm
     def self.parse(args)
       options = {}
       opt_parser = OptionParser.new do |opts|
-        opts.banner = 'Usage: mrjvm [options] [path-to-file]'
+        opts.banner = 'Usage: mrjvm [options] [path-to-file-to-class-file]'
 
         opts.on_tail('-h', '--help', 'Print this help.') do
           puts opts
