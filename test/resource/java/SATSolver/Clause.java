@@ -18,11 +18,11 @@ public class Clause {
 	}
 
 	public boolean evaluate(int combination) {
-                System.out.println("clause evaluation start");
+                //System.out.println("clause evaluation start");
 		for (int i=0; i<variables.size(); i++) {
 			Variable variable = variables.get(i);
 			if (variable.evaluate(combination)) {
-                                System.out.println("clause true");
+                                //System.out.println("clause true");
 				return true;
 			}
 		}
@@ -32,7 +32,7 @@ public class Clause {
 
 	@Override
 	public String toString() {
-		return "{" + variables +
-				'}' + "\n";
+		return "{" + variables.toString() +
+				"}" + "\n";
 	}
 }

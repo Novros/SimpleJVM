@@ -43,15 +43,15 @@ public class Formula {
 	}
 
 	public boolean evaluate(int combination) {
-                System.out.println("formula evaluation start");
+                //System.out.println("formula evaluation start");
 		for (int i=0; i<clauses.size(); i++) {
-                        System.out.println("formula evaluation iteration " + i);
+                        //System.out.println("formula evaluation iteration " + i);
 			Clause clause = clauses.get(i);
 			if (!clause.evaluate(combination)) {
-                                System.out.println("formula false");
+                                //System.out.println("formula false");
 				return false;
 			}
-			System.out.println("formula evaluation iteration " + i + " ends");
+			//System.out.println("formula evaluation iteration " + i + " ends");
 		}
 
 		return true;
@@ -59,7 +59,7 @@ public class Formula {
 
 	@Override
 	public String toString() {
-		return "Formula{" + clauses +
-				'}';
+		return "Formula{" + clauses.toString() +
+				"}";
 	}
 }

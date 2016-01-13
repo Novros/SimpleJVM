@@ -26,7 +26,7 @@ public class Variable {
 	}
 
 	public boolean evaluate(int combination) {
-                System.out.println("variable evaluation start");
+                //System.out.println("variable evaluation start");
 		return !((combination >> this.getIndex() - 1 & 1) == this.isNegation());
 	}
 
@@ -34,6 +34,6 @@ public class Variable {
 	public String toString() {
 		return "{" + index +
 				", " + weight +
-				'}';
+				"}";
 	}
 }

@@ -14,24 +14,23 @@ public class BruteForce {
 	}
 	
 	public int solve() {
-                System.out.println("solve started");
+                //System.out.println("solve started");
 		int combinationsCount = (int)Math.pow(2, this.formula.getVariablesCount());
 		int maxWeight = 0;
 
 		for (int x=0; x<combinationsCount; x++) {
-                        System.out.println("iteration start " + x);
-			boolean evaluation = formula.evaluate(x);
-			if (evaluation) {
-                                System.out.println("true");
+                        //System.out.println("iteration start " + x);
+			if (formula.evaluate(x)) {
+                                //System.out.println("true");
 				int combinationWeight = getCombinationWeight(x, formula);
 				if (combinationWeight > maxWeight) {
 					maxWeight = combinationWeight;
 					bestRating = x;
 				}
 			}
-			System.out.println("iteration ended " + x);
+			//System.out.println("iteration ended " + x);
 		}
-                System.out.println("solve ended.");
+                //System.out.println("solve ended.");
 		return maxWeight;
 	}
 
@@ -42,14 +41,14 @@ public class BruteForce {
 	 */
 	public int getCombinationWeight(int combination, Formula formula) {
 		int totalWeight = 0;
-                System.out.println("get combination weight for " + combination);
+                //System.out.println("get combination weight for " + combination);
 		for (int i=0; i<formula.getVariablesCount(); i++) {
 			if ((combination >> i & 1) == 1) {
 				Variable variable = formula.getVariable(i+1);
 				totalWeight += variable.getWeight();
 			}
 		}
-                System.out.println("weight for combination is " + totalWeight);
+                //System.out.println("weight for combination is " + totalWeight);
 		return totalWeight;
 	}
 }
