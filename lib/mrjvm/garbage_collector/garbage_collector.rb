@@ -1,5 +1,6 @@
 require_relative '../../mrjvm'
 require 'thread'
+require 'set'
 
 class GarbageCollector
   # Number of seconds, when garbage collector check object heap
@@ -12,6 +13,7 @@ class GarbageCollector
     MRjvm.debug('Garbage collector started')
 
     @object_heap = execution_core.object_heap
+    @class_heap = execution_core.class_heap
     # if JVM set this variable as true, GC thread will be automatically stopped
     @stop_gc = false
 
@@ -21,15 +23,28 @@ class GarbageCollector
         MRjvm::MRjvm.mutex.synchronize do
           # this array contains references to live objects
           # all items are heap_id of object instance
-          @live_objects = []
+          @live_objects = Set.new
           check_object_heap
           check_frame_stack(frame_stack, execution_core.fp)
+          check_class_variables
           clear_garbage
         end
         # stop garbage collector when all objects were deleted
         @stop_gc && Thread.stop
       end
 
+    end
+  end
+
+  def check_class_variables
+    @class_heap.each do |class_map|
+      check_java_static_variables(class_map[1])
+    end
+  end
+
+  def check_java_static_variables(java_class)
+    java_class.static_variables.each do |object_variable|
+      check_stack_variable(object_variable)
     end
   end
 
@@ -66,19 +81,21 @@ class GarbageCollector
   # Check if given stack_variable is object, if yes add to live object array
   def check_stack_variable(stack_variable)
     if !stack_variable.nil? && stack_variable.object?
-      @live_objects << stack_variable.value
-      # call recursively on objects of object
-      object = @object_heap.get_object(stack_variable)
-      (check_object_variables(object)) unless object.nil?
+      ret = @live_objects.add?(stack_variable.value)
+      unless ret.nil?
+        # call recursively on objects of object
+        object = @object_heap.get_object(stack_variable)
+        (check_object_variables(object)) unless object.nil?
+      end
     end
   end
 
   # Iterate live object and remove dead objects (without reference)
   def clear_garbage
-   MRjvm.debug('Live Objects: ' << @live_objects.to_s)
-   @object_heap.each do |object_map|
+    MRjvm.debug('Live Objects: ' << @live_objects.to_s)
+    @object_heap.each do |object_map|
       !@live_objects.include?(object_map[1].heap_id) &&
-        (@object_heap.remove_object(object_map[1]))
+          (@object_heap.remove_object(object_map[1]))
     end
   end
 

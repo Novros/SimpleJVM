@@ -489,7 +489,7 @@ class ExecutionCore
         else
           raise StandardError, byte_code[frame.pc]
       end
-      #@gc.run(object_heap, frame_stack, fp, '')
+      # @gc.run(self, frame_stack)
     end
     0
   end

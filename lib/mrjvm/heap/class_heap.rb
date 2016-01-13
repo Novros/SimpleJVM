@@ -125,6 +125,11 @@ module Heap
       lib
     end
 
+    # Iterate all objects in object heap
+    def each(&block)
+      @class_map.each(&block);
+    end
+
     def to_s
       string = "Class heap\n"
       @class_map.each do |item|
